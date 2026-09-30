@@ -1,0 +1,100 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Admin {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model Customer {
+  id                String      @id @default(cuid())
+  slug              String      @unique
+  businessName      String
+  ownerName         String
+  tagline           String?
+  logoPath          String?
+  coverPath         String?
+  address           String
+  mapsUrl           String?
+  jobTitle          String?
+  email             String?
+  phone             String?
+  city              String?
+  website           String?
+  whatsapp          String
+  whatsappMessage   String?
+  facebookUrl       String?
+  instagramUsername String?
+  tiktokUsername    String?
+  linkedinUrl       String?
+  accentColor       String      @default("#2563EB")
+  isActive          Boolean     @default(true)
+  internalNote      String?
+  deletedAt         DateTime?   // Soft delete
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
+
+  orders            Order[]
+  pageViews         PageView[]
+  linkClicks        LinkClick[]
+
+  @@index([slug])
+  @@index([deletedAt])
+}
+
+model Order {
+  id               String   @id @default(cuid())
+  customerId       String
+  customer         Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  orderDate        DateTime @default(now())
+  quantity         Int      @default(100)
+  packageName      String?
+  totalPrice       Int      @default(0) // In Rupiah
+  paymentStatus    String   @default("belum_bayar") // belum_bayar | dp | lunas
+  productionStatus String   @default("menunggu")   // menunggu | dicetak | dikirim | selesai
+  note             String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@index([customerId])
+  @@index([paymentStatus])
+  @@index([productionStatus])
+}
+
+model PageView {
+  id         String   @id @default(cuid())
+  customerId String
+  customer   Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  viewedAt   DateTime @default(now())
+  ipHash     String?
+  deviceType String?  // mobile | desktop | tablet | unknown
+
+  @@index([customerId])
+  @@index([viewedAt])
+}
+
+model LinkClick {
+  id         String   @id @default(cuid())
+  customerId String
+  customer   Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  linkType   String   // whatsapp | facebook | instagram | tiktok | maps | vcard
+  clickedAt  DateTime @default(now())
+
+  @@index([customerId])
+  @@index([linkType])
+  @@index([clickedAt])
+}
+
+model Setting {
+  key   String @id
+  value String
+}
