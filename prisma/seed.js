@@ -222,6 +222,9 @@ async function main() {
   const linkTypes = ["whatsapp", "facebook", "instagram", "tiktok", "maps", "vcard"];
   const devices = ["mobile", "desktop", "mobile", "mobile", "tablet"];
 
+  const pageViewsBatch = [];
+  const linkClicksBatch = [];
+
   for (let d = 30; d >= 0; d--) {
     const date = new Date(Date.now() - d * 24 * 60 * 60 * 1000);
     for (const cust of customers) {
@@ -229,29 +232,33 @@ async function main() {
       const viewCount = Math.floor(Math.random() * 7) + 2;
       for (let i = 0; i < viewCount; i++) {
         const viewTime = new Date(date.getTime() + Math.random() * 86400000);
-        await prisma.pageView.create({
-          data: {
-            customerId: cust.id,
-            viewedAt: viewTime,
-            ipHash: "hash_" + Math.floor(Math.random() * 100),
-            deviceType: devices[Math.floor(Math.random() * devices.length)],
-          },
+        pageViewsBatch.push({
+          customerId: cust.id,
+          viewedAt: viewTime,
+          ipHash: "hash_" + Math.floor(Math.random() * 100),
+          deviceType: devices[Math.floor(Math.random() * devices.length)],
         });
 
         // 50% peluang pengunjung klik link
         if (Math.random() > 0.4) {
           const ltype = linkTypes[Math.floor(Math.random() * linkTypes.length)];
-          await prisma.linkClick.create({
-            data: {
-              customerId: cust.id,
-              linkType: ltype,
-              clickedAt: new Date(viewTime.getTime() + 10000),
-            },
+          linkClicksBatch.push({
+            customerId: cust.id,
+            linkType: ltype,
+            clickedAt: new Date(viewTime.getTime() + 10000),
           });
         }
       }
     }
   }
+
+  if (pageViewsBatch.length > 0) {
+    await prisma.pageView.createMany({ data: pageViewsBatch });
+  }
+  if (linkClicksBatch.length > 0) {
+    await prisma.linkClick.createMany({ data: linkClicksBatch });
+  }
+
   console.log("✅ Data statistik simulasi 30 hari berhasil dibuat");
   console.log("🚀 Selesai!");
 }

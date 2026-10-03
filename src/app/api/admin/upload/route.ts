@@ -32,19 +32,33 @@ export async function POST(request: Request) {
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
 
-    // Extension & Random Name
+    // Jika di Vercel / serverless (filesystem read-only), return Base64 Data URL agar tersimpan langsung di DB
+    if (process.env.VERCEL || process.env.USE_BASE64_UPLOAD === "true") {
+      const mimeType = file.type || "image/jpeg";
+      const base64Data = `data:${mimeType};base64,${buffer.toString("base64")}`;
+      return NextResponse.json({ success: true, url: base64Data });
+    }
+
+    // Default: Simpan ke public/uploads lokal
     const ext = file.name.split(".").pop() || "png";
     const cleanExt = ext.replace(/[^a-zA-Z0-9]/g, "").toLowerCase();
     const randomName = `${crypto.randomUUID()}.${cleanExt}`;
 
-    const uploadDir = path.join(process.cwd(), "public", "uploads");
-    await mkdir(uploadDir, { recursive: true });
+    try {
+      const uploadDir = path.join(process.cwd(), "public", "uploads");
+      await mkdir(uploadDir, { recursive: true });
 
-    const filePath = path.join(uploadDir, randomName);
-    await writeFile(filePath, buffer);
+      const filePath = path.join(uploadDir, randomName);
+      await writeFile(filePath, buffer);
 
-    const publicUrl = `/uploads/${randomName}`;
-    return NextResponse.json({ success: true, url: publicUrl });
+      const publicUrl = `/uploads/${randomName}`;
+      return NextResponse.json({ success: true, url: publicUrl });
+    } catch {
+      // Fallback ke data URL jika filesystem tidak dapat ditulis
+      const mimeType = file.type || "image/jpeg";
+      const base64Data = `data:${mimeType};base64,${buffer.toString("base64")}`;
+      return NextResponse.json({ success: true, url: base64Data });
+    }
   } catch (error) {
     console.error("Upload error:", error);
     return NextResponse.json({ error: "Gagal mengunggah gambar" }, { status: 500 });
