@@ -11,6 +11,8 @@ import {
   PlusCircle,
   QrCode,
   Calendar,
+  Layers,
+  Sparkles,
 } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { formatRupiah } from "@/lib/normalize";
@@ -62,7 +64,7 @@ export default async function AdminDashboardPage() {
     },
   });
 
-  // 5. Daftar 5 Profil Paling Banyak Dikunjungi (Total pageViews)
+  // 5. Daftar 5 Profil Paling Banyak Dikunjungi
   const topVisited = await prisma.customer.findMany({
     where: { deletedAt: null },
     select: {
@@ -110,22 +112,22 @@ export default async function AdminDashboardPage() {
   return (
     <div className="space-y-8">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-slate-800/80">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
-            Dashboard Penjual
+          <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
+            Dashboard Manajemen
           </h1>
           <p className="text-xs sm:text-sm text-slate-400 mt-1">
-            Ringkasan data pelanggan, cetak kartu, dan analitik scan QR
+            Ringkasan data pelanggan, pesanan cetak kartu, dan statistik scan QR
           </p>
         </div>
         <div className="flex items-center gap-2.5">
           <Link
             href="/admin/customers/new"
-            className="px-4 py-2.5 bg-blue-600 hover:bg-blue-500 text-white text-xs sm:text-sm font-semibold rounded-xl transition-all shadow-lg shadow-blue-600/30 flex items-center gap-2 active:scale-95"
+            className="px-4 py-2.5 btn-gold text-black text-xs sm:text-sm font-extrabold rounded-xl transition-all flex items-center gap-2 active:scale-95 shadow-md shadow-amber-500/15"
           >
-            <PlusCircle className="w-4 h-4" />
-            <span>Tambah Pelanggan</span>
+            <PlusCircle className="w-4 h-4 text-black" />
+            <span>Tambah Pelanggan Baru</span>
           </Link>
         </div>
       </div>
@@ -133,17 +135,17 @@ export default async function AdminDashboardPage() {
       {/* Summary Metrik Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Total Pelanggan */}
-        <div className="p-5 rounded-2xl bg-slate-900/90 border border-slate-800 backdrop-blur-md shadow-lg">
+        <div className="p-5 rounded-3xl bg-[#0B0F19]/90 border border-slate-800 hover:border-amber-500/30 transition-all backdrop-blur-md shadow-xl relative overflow-hidden">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold text-slate-400">Total Pelanggan</span>
-            <div className="w-8 h-8 rounded-lg bg-blue-500/10 text-blue-400 flex items-center justify-center">
+            <div className="w-9 h-9 rounded-xl bg-amber-500/10 text-[#D4AF37] flex items-center justify-center border border-amber-500/20">
               <Users className="w-4 h-4" />
             </div>
           </div>
           <div className="mt-3">
-            <span className="text-2xl font-bold text-white">{totalCustomers}</span>
-            <div className="flex items-center gap-2 mt-1 text-[11px] text-slate-400">
-              <span className="text-emerald-400 font-medium">{activeCustomers} aktif</span>
+            <span className="text-2xl sm:text-3xl font-black text-white">{totalCustomers}</span>
+            <div className="flex items-center gap-2 mt-1.5 text-[11px] text-slate-400">
+              <span className="text-emerald-400 font-semibold">{activeCustomers} aktif</span>
               <span>•</span>
               <span className="text-slate-500">{inactiveCustomers} nonaktif</span>
             </div>
@@ -151,63 +153,63 @@ export default async function AdminDashboardPage() {
         </div>
 
         {/* Total Pesanan & Omzet */}
-        <div className="p-5 rounded-2xl bg-slate-900/90 border border-slate-800 backdrop-blur-md shadow-lg">
+        <div className="p-5 rounded-3xl bg-[#0B0F19]/90 border border-slate-800 hover:border-amber-500/30 transition-all backdrop-blur-md shadow-xl relative overflow-hidden">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold text-slate-400">Total Omzet Pesanan</span>
-            <div className="w-8 h-8 rounded-lg bg-emerald-500/10 text-emerald-400 flex items-center justify-center">
+            <div className="w-9 h-9 rounded-xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center border border-emerald-500/20">
               <DollarSign className="w-4 h-4" />
             </div>
           </div>
           <div className="mt-3">
-            <span className="text-2xl font-bold text-white">{formatRupiah(totalRevenue)}</span>
-            <p className="text-[11px] text-slate-400 mt-1">
+            <span className="text-xl sm:text-2xl font-black text-white">{formatRupiah(totalRevenue)}</span>
+            <p className="text-[11px] text-slate-400 mt-1.5">
               Dari {totalOrders} total pesanan kartu
             </p>
           </div>
         </div>
 
         {/* Scan 7 Hari Terakhir */}
-        <div className="p-5 rounded-2xl bg-slate-900/90 border border-slate-800 backdrop-blur-md shadow-lg">
+        <div className="p-5 rounded-3xl bg-[#0B0F19]/90 border border-slate-800 hover:border-amber-500/30 transition-all backdrop-blur-md shadow-xl relative overflow-hidden">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold text-slate-400">Scan QR (7 Hari)</span>
-            <div className="w-8 h-8 rounded-lg bg-indigo-500/10 text-indigo-400 flex items-center justify-center">
+            <div className="w-9 h-9 rounded-xl bg-amber-500/10 text-[#D4AF37] flex items-center justify-center border border-amber-500/20">
               <TrendingUp className="w-4 h-4" />
             </div>
           </div>
           <div className="mt-3">
-            <span className="text-2xl font-bold text-white">{views7Days}</span>
-            <p className="text-[11px] text-slate-400 mt-1">Kunjungan dalam seminggu</p>
+            <span className="text-2xl sm:text-3xl font-black text-white">{views7Days}</span>
+            <p className="text-[11px] text-slate-400 mt-1.5">Kunjungan dalam seminggu</p>
           </div>
         </div>
 
         {/* Scan 30 Hari Terakhir */}
-        <div className="p-5 rounded-2xl bg-slate-900/90 border border-slate-800 backdrop-blur-md shadow-lg">
+        <div className="p-5 rounded-3xl bg-[#0B0F19]/90 border border-slate-800 hover:border-amber-500/30 transition-all backdrop-blur-md shadow-xl relative overflow-hidden">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold text-slate-400">Scan QR (30 Hari)</span>
-            <div className="w-8 h-8 rounded-lg bg-amber-500/10 text-amber-400 flex items-center justify-center">
+            <div className="w-9 h-9 rounded-xl bg-amber-500/10 text-[#D4AF37] flex items-center justify-center border border-amber-500/20">
               <Calendar className="w-4 h-4" />
             </div>
           </div>
           <div className="mt-3">
-            <span className="text-2xl font-bold text-white">{views30Days}</span>
-            <p className="text-[11px] text-slate-400 mt-1">Total interaksi sebulan</p>
+            <span className="text-2xl sm:text-3xl font-black text-white">{views30Days}</span>
+            <p className="text-[11px] text-slate-400 mt-1.5">Total interaksi sebulan</p>
           </div>
         </div>
       </div>
 
-      {/* 14-Day Scan Activity Chart (Pure CSS/SVG High-Performance) */}
-      <div className="p-6 rounded-2xl bg-slate-900/90 border border-slate-800 shadow-xl">
-        <div className="flex items-center justify-between mb-6">
+      {/* 14-Day Scan Activity Chart */}
+      <div className="p-6 rounded-3xl bg-[#0B0F19]/90 border border-slate-800/90 shadow-2xl relative">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-2">
           <div>
             <h2 className="text-base font-bold text-white flex items-center gap-2">
-              <TrendingUp className="w-4 h-4 text-blue-400" />
-              <span>Aktivitas Scan QR (14 Hari Terakhir)</span>
+              <TrendingUp className="w-4 h-4 text-[#D4AF37]" />
+              <span>Aktivitas Pemindaian QR (14 Hari Terakhir)</span>
             </h2>
-            <p className="text-xs text-slate-400">Grafik kunjungan halaman profil dari scan fisik</p>
+            <p className="text-xs text-slate-400 mt-0.5">Grafik kunjungan profil bisnis dari hasil scan kartu fisik</p>
           </div>
           <Link
             href="/admin/stats"
-            className="text-xs text-blue-400 hover:text-blue-300 font-medium flex items-center gap-1"
+            className="text-xs text-[#D4AF37] hover:text-amber-300 font-semibold flex items-center gap-1 w-fit"
           >
             <span>Lihat Analitik Lengkap</span>
             <ArrowRight className="w-3.5 h-3.5" />
@@ -215,22 +217,22 @@ export default async function AdminDashboardPage() {
         </div>
 
         {/* Bar Visualizer */}
-        <div className="h-40 flex items-end justify-between gap-1 sm:gap-3 pt-6 border-b border-slate-800 pb-2">
+        <div className="h-44 flex items-end justify-between gap-1 sm:gap-3 pt-6 border-b border-slate-800 pb-2">
           {dailyViews.map((item, idx) => {
             const heightPercent = Math.max((item.count / maxDailyView) * 100, 8);
             return (
               <div key={idx} className="flex-1 flex flex-col items-center h-full justify-end group">
                 <div className="relative w-full flex items-end justify-center h-full">
                   {/* Tooltip on hover */}
-                  <div className="absolute -top-7 opacity-0 group-hover:opacity-100 transition-opacity bg-slate-800 text-white text-[10px] px-1.5 py-0.5 rounded shadow pointer-events-none whitespace-nowrap z-10">
+                  <div className="absolute -top-7 opacity-0 group-hover:opacity-100 transition-opacity bg-slate-900 border border-amber-500/30 text-white text-[10px] px-2 py-0.5 rounded-lg shadow-xl pointer-events-none whitespace-nowrap z-10 font-bold">
                     {item.count} scan
                   </div>
                   <div
-                    className="w-full max-w-[28px] rounded-t-lg bg-gradient-to-t from-blue-600 to-indigo-500 group-hover:from-blue-500 group-hover:to-cyan-400 transition-all duration-300"
+                    className="w-full max-w-[28px] rounded-t-lg bg-gradient-to-t from-[#8A6718] to-[#D4AF37] group-hover:brightness-125 transition-all duration-300 shadow-sm"
                     style={{ height: `${heightPercent}%` }}
                   />
                 </div>
-                <span className="text-[9px] sm:text-[10px] text-slate-500 mt-2 rotate-45 sm:rotate-0 truncate">
+                <span className="text-[9px] sm:text-[10px] text-slate-400 mt-2 rotate-45 sm:rotate-0 truncate font-medium">
                   {item.day.split(" ")[0]}
                 </span>
               </div>
@@ -242,23 +244,23 @@ export default async function AdminDashboardPage() {
       {/* Grid for Latest Orders & Top Visited Profiles */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* 5 Pesanan Terbaru */}
-        <div className="p-6 rounded-2xl bg-slate-900/90 border border-slate-800 shadow-xl">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-base font-bold text-white flex items-center gap-2">
+        <div className="p-6 rounded-3xl bg-[#0B0F19]/90 border border-slate-800/90 shadow-2xl">
+          <div className="flex items-center justify-between mb-4 pb-3 border-b border-slate-800/80">
+            <h2 className="text-sm font-bold text-white flex items-center gap-2">
               <ShoppingBag className="w-4 h-4 text-emerald-400" />
               <span>5 Pesanan Terbaru</span>
             </h2>
             <Link
               href="/admin/orders"
-              className="text-xs text-blue-400 hover:text-blue-300 font-medium"
+              className="text-xs text-[#D4AF37] hover:text-amber-300 font-semibold"
             >
               Lihat Semua
             </Link>
           </div>
 
-          <div className="divide-y divide-slate-800/80">
+          <div className="divide-y divide-slate-800/60">
             {latestOrders.length === 0 ? (
-              <p className="text-xs text-slate-500 py-6 text-center">Belum ada pesanan.</p>
+              <p className="text-xs text-slate-500 py-6 text-center">Belum ada data pesanan.</p>
             ) : (
               latestOrders.map((order) => (
                 <div key={order.id} className="py-3.5 flex items-center justify-between gap-3">
@@ -266,7 +268,7 @@ export default async function AdminDashboardPage() {
                     <Link
                       href={`/c/${order.customer.slug}`}
                       target="_blank"
-                      className="text-xs sm:text-sm font-semibold text-white hover:text-blue-400 flex items-center gap-1.5"
+                      className="text-xs sm:text-sm font-bold text-white hover:text-[#D4AF37] transition-colors flex items-center gap-1.5"
                     >
                       <span>{order.customer.businessName}</span>
                       <ExternalLink className="w-3 h-3 text-slate-500" />
@@ -274,12 +276,12 @@ export default async function AdminDashboardPage() {
                     <div className="flex items-center gap-2 text-[11px] text-slate-400 mt-0.5">
                       <span>{order.quantity} pcs</span>
                       <span>•</span>
-                      <span className="text-slate-300">{formatRupiah(order.totalPrice)}</span>
+                      <span className="text-slate-300 font-medium">{formatRupiah(order.totalPrice)}</span>
                     </div>
                   </div>
                   <div className="flex flex-col items-end gap-1">
                     <span
-                      className={`text-[10px] font-semibold px-2 py-0.5 rounded-full capitalize ${
+                      className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full capitalize ${
                         order.paymentStatus === "lunas"
                           ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
                           : order.paymentStatus === "dp"
@@ -300,34 +302,34 @@ export default async function AdminDashboardPage() {
         </div>
 
         {/* 5 Profil Paling Banyak Dikunjungi */}
-        <div className="p-6 rounded-2xl bg-slate-900/90 border border-slate-800 shadow-xl">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-base font-bold text-white flex items-center gap-2">
-              <QrCode className="w-4 h-4 text-indigo-400" />
-              <span>Profil Paling Populer</span>
+        <div className="p-6 rounded-3xl bg-[#0B0F19]/90 border border-slate-800/90 shadow-2xl">
+          <div className="flex items-center justify-between mb-4 pb-3 border-b border-slate-800/80">
+            <h2 className="text-sm font-bold text-white flex items-center gap-2">
+              <QrCode className="w-4 h-4 text-[#D4AF37]" />
+              <span>Profil Bisnis Terpopuler</span>
             </h2>
             <Link
               href="/admin/customers"
-              className="text-xs text-blue-400 hover:text-blue-300 font-medium"
+              className="text-xs text-[#D4AF37] hover:text-amber-300 font-semibold"
             >
               Kelola Kartu
             </Link>
           </div>
 
-          <div className="divide-y divide-slate-800/80">
+          <div className="divide-y divide-slate-800/60">
             {topVisited.length === 0 ? (
-              <p className="text-xs text-slate-500 py-6 text-center">Belum ada data kunjungan.</p>
+              <p className="text-xs text-slate-500 py-6 text-center">Belum ada data kunjungan profil.</p>
             ) : (
               topVisited.map((c, index) => (
                 <div key={c.id} className="py-3.5 flex items-center justify-between gap-3">
                   <div className="flex items-center gap-3">
-                    <div className="w-6 text-center text-xs font-bold text-slate-500">
+                    <div className="w-6 text-center text-xs font-black text-slate-500">
                       #{index + 1}
                     </div>
                     <div>
                       <Link
                         href={`/admin/customers/${c.id}`}
-                        className="text-xs sm:text-sm font-semibold text-white hover:text-blue-400 block"
+                        className="text-xs sm:text-sm font-bold text-white hover:text-[#D4AF37] transition-colors block"
                       >
                         {c.businessName}
                       </Link>

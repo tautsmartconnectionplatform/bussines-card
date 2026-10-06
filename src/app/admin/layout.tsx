@@ -10,8 +10,8 @@ export default async function AdminLayout({
   const admin = await getCurrentAdmin();
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col md:flex-row selection:bg-blue-600">
-      {/* Sidebar Component (Handles Desktop & Mobile Navigation) */}
+    <div className="min-h-screen bg-[#070A10] text-slate-100 flex flex-col md:flex-row selection:bg-[#D4AF37] selection:text-black">
+      {/* Sidebar Component */}
       <AdminSidebar adminEmail={admin?.email || "admin@kartubisnis.com"} />
 
       {/* Main Content Area */}

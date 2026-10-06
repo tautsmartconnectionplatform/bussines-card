@@ -2,10 +2,10 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "TautSmart - Solusi Kartu Bisnis Digital QR Modern",
-  description: "Platform kartu bisnis digital TautSmart berbasis QR code. Update data profil bisnis Anda kapan saja tanpa cetak ulang kartu.",
+  title: "TautSmart | Kartu Bisnis Digital QR Premium & Profesional",
+  description: "Platform kartu bisnis digital pintar berbasis QR code. Solusi profil mobile-first eksklusif untuk pengusaha, eksekutif, dan profesional modern.",
   icons: {
-    icon: "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💳</text></svg>",
+    icon: "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>👑</text></svg>",
   },
 };
 
@@ -15,8 +15,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="id">
-      <body className="min-h-screen bg-slate-50 text-slate-900 antialiased selection:bg-blue-500 selection:text-white">
+    <html lang="id" className="dark">
+      <body className="min-h-screen bg-[#070A10] text-slate-100 antialiased selection:bg-[#D4AF37] selection:text-black">
         {children}
       </body>
     </html>

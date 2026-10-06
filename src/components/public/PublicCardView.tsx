@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import QRCode from "qrcode";
 import {
   Phone,
   MessageSquare,
@@ -15,6 +16,8 @@ import {
   Building2,
   Briefcase,
   User,
+  QrCode as QrIcon,
+  X,
 } from "lucide-react";
 import {
   WhatsAppIcon,
@@ -52,18 +55,93 @@ interface PublicCardViewProps {
   footerText?: string;
 }
 
-export default function PublicCardView({ customer, footerText }: PublicCardViewProps) {
-  const [copiedField, setCopiedField] = useState<string | null>(null);
-  const [shared, setShared] = useState(false);
+function TautRibbonLogo({ className = "" }: { className?: string }) {
+  return (
+    <svg
+      width="34"
+      height="30"
+      viewBox="0 0 38 32"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      className={`shrink-0 drop-shadow ${className}`}
+    >
+      <defs>
+        <linearGradient id="tautRibbonGold" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#FFFFFF" />
+          <stop offset="35%" stopColor="#EAD8B1" />
+          <stop offset="70%" stopColor="#C9A364" />
+          <stop offset="100%" stopColor="#9E763B" />
+        </linearGradient>
+      </defs>
+      <path
+        d="M4 6.5C4 5.1 5.2 4 6.8 4H32.2C33.8 4 35 5.1 35 6.5C32.5 7.8 28 8.2 23.5 8.7C22.2 11.5 21 16 18.5 24C17.7 26.5 15.6 28 13.2 28C11.5 28 10.8 26.8 11.3 25.2C13 19.5 15.2 13 17.5 8.9C11.2 8.7 6.2 7.8 4 6.5Z"
+        fill="url(#tautRibbonGold)"
+      />
+    </svg>
+  );
+}
 
-  const accent = customer.accentColor || "#2563EB";
+export default function PublicCardView({ customer, footerText }: PublicCardViewProps) {
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [qrModalOpen, setQrModalOpen] = useState(false);
+  const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
+
   const primaryPhone = customer.phone || customer.whatsapp;
   const displayName = customer.ownerName || customer.businessName;
 
-  // Track link click asynchronously
+  // Set body background to warm light tone on mount
+  useEffect(() => {
+    const originalBg = document.body.style.backgroundColor;
+    const originalColor = document.body.style.color;
+    document.body.style.backgroundColor = "#F6F4EE";
+    document.body.style.color = "#1E293B";
+
+    return () => {
+      document.body.style.backgroundColor = originalBg;
+      document.body.style.color = originalColor;
+    };
+  }, []);
+
+  // Show temporary toast notification
+  const showToast = (msg: string) => {
+    setToastMessage(msg);
+    setTimeout(() => {
+      setToastMessage((prev) => (prev === msg ? null : prev));
+    }, 2400);
+  };
+
+  // Generate QR Code data URL on mount
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const currentUrl = window.location.href;
+      QRCode.toDataURL(currentUrl, {
+        width: 320,
+        margin: 2,
+        color: {
+          dark: "#0B1528",
+          light: "#FFFFFF",
+        },
+      })
+        .then((url) => setQrDataUrl(url))
+        .catch(() => {});
+    }
+  }, [customer.slug]);
+
+  // Handle escape key to close QR modal
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && qrModalOpen) {
+        setQrModalOpen(false);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [qrModalOpen]);
+
+  // Track link clicks asynchronously
   const trackClick = async (linkType: string) => {
     try {
-      if (navigator.sendBeacon) {
+      if (typeof navigator !== "undefined" && navigator.sendBeacon) {
         navigator.sendBeacon(
           "/api/track/click",
           JSON.stringify({ slug: customer.slug, linkType })
@@ -77,19 +155,20 @@ export default function PublicCardView({ customer, footerText }: PublicCardViewP
         }).catch(() => {});
       }
     } catch {
-      // Non-blocking error
+      // Non-blocking track error
     }
   };
 
-  const copyToClipboard = (text: string, field: string) => {
-    navigator.clipboard.writeText(text);
-    setCopiedField(field);
-    setTimeout(() => setCopiedField(null), 2000);
+  const copyToClipboard = (text: string, label: string) => {
+    if (typeof navigator !== "undefined" && navigator.clipboard) {
+      navigator.clipboard.writeText(text);
+      showToast(`${label} berhasil disalin`);
+    }
   };
 
   const handleShare = async () => {
     trackClick("share");
-    if (navigator.share) {
+    if (typeof navigator !== "undefined" && navigator.share) {
       try {
         await navigator.share({
           title: `${displayName} | ${customer.businessName}`,
@@ -98,16 +177,22 @@ export default function PublicCardView({ customer, footerText }: PublicCardViewP
         });
         return;
       } catch {
-        // Fallback
+        // Fallback if cancelled
       }
     }
 
-    copyToClipboard(window.location.href, "share");
-    setShared(true);
-    setTimeout(() => setShared(false), 2000);
+    if (typeof window !== "undefined") {
+      navigator.clipboard.writeText(window.location.href);
+      showToast("Tautan profil berhasil disalin");
+    }
   };
 
-  // WhatsApp link preparation
+  const handleVcardDownload = () => {
+    trackClick("vcard");
+    showToast("Mengunduh kontak vCard...");
+  };
+
+  // WhatsApp URL formulation
   const waMessage = customer.whatsappMessage
     ? encodeURIComponent(customer.whatsappMessage)
     : "";
@@ -120,429 +205,427 @@ export default function PublicCardView({ customer, footerText }: PublicCardViewP
       customer.city ? `${customer.address}, ${customer.city}` : customer.address
     )}`;
 
+  // Formatted display website
+  const displayWebsite = customer.website
+    ? customer.website.replace(/^https?:\/\//, "").replace(/\/$/, "")
+    : "www.tautsmart.com";
+
+  // Clean social handles
+  const cleanIg = customer.instagramUsername
+    ? customer.instagramUsername.replace(/^@/, "")
+    : null;
+  const cleanTiktok = customer.tiktokUsername
+    ? customer.tiktokUsername.replace(/^@/, "")
+    : null;
+
   return (
-    <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-between p-4 sm:p-6 text-slate-100 selection:bg-blue-600 selection:text-white">
-      {/* Background ambient gradient with purpose (identity focus accent) */}
-      <div
-        className="fixed top-0 left-1/2 -translate-x-1/2 w-full max-w-lg h-96 opacity-20 blur-3xl pointer-events-none -z-10 transition-all duration-700"
-        style={{
-          background: `radial-gradient(circle, ${accent} 0%, transparent 70%)`,
-        }}
-      />
+    <div className="min-h-screen bg-[#F6F4EE] text-slate-800 selection:bg-[#EBDDC3] selection:text-slate-900 relative overflow-x-hidden font-sans">
+      {/* Toast Notification */}
+      {toastMessage && (
+        <div
+          role="status"
+          aria-live="polite"
+          className="fixed top-5 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 px-4 py-2.5 rounded-full bg-[#0B1528] border border-white/10 text-white text-xs font-semibold shadow-2xl backdrop-blur-md animate-bounce"
+        >
+          <Check className="w-4 h-4 text-[#EAD8B1]" />
+          <span>{toastMessage}</span>
+        </div>
+      )}
 
       {/* Main Container */}
-      <main className="w-full max-w-md mx-auto my-auto flex flex-col items-center space-y-4">
-        {/* Floating Share Button */}
-        <div className="w-full flex justify-end">
+      <main className="w-full max-w-[420px] mx-auto px-4 py-5 sm:py-7 flex flex-col space-y-4">
+        {/* Top Header Actions (Bagikan + QR Code) */}
+        <div className="w-full flex items-center justify-end gap-2 pr-0.5">
+          <button
+            onClick={() => {
+              trackClick("view_qr");
+              setQrModalOpen(true);
+            }}
+            aria-label="Tampilkan QR Code"
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-700 bg-white hover:bg-[#FAF9F5] border border-[#E5E0D6] rounded-full shadow-sm transition-all active:scale-95"
+          >
+            <QrIcon className="w-3.5 h-3.5 text-slate-600" />
+            <span>QR</span>
+          </button>
+
           <button
             onClick={handleShare}
             aria-label="Bagikan profil"
-            className="flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-medium text-slate-300 bg-slate-900/90 hover:bg-slate-800 border border-slate-700/80 rounded-full backdrop-blur-md transition-all active:scale-95 shadow-sm focus-visible:ring-2 focus-visible:ring-blue-500 focus:outline-none"
+            className="flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-medium text-slate-700 bg-white hover:bg-[#FAF9F5] border border-[#E5E0D6] rounded-full shadow-sm transition-all active:scale-95"
           >
-            {shared || copiedField === "share" ? (
-              <>
-                <Check className="w-3.5 h-3.5 text-emerald-400" />
-                <span className="text-emerald-400 font-semibold">Tautan Tersalin</span>
-              </>
-            ) : (
-              <>
-                <Share2 className="w-3.5 h-3.5" />
-                <span>Bagikan</span>
-              </>
-            )}
+            <Share2 className="w-3.5 h-3.5 text-slate-600" />
+            <span>Bagikan</span>
           </button>
         </div>
 
-        {/* SECTION 1: PROFIL WITH COVER BANNER */}
+        {/* ============================================================ */}
+        {/* CARD 1: PROFILE & QUICK ACTIONS */}
+        {/* ============================================================ */}
         <section
           aria-label="Profil Bisnis"
-          className="w-full bg-slate-900/90 border border-slate-800 rounded-3xl backdrop-blur-xl shadow-xl overflow-hidden"
+          className="w-full bg-white rounded-[26px] border border-[#ECE7DE] shadow-[0_2px_12px_rgba(0,0,0,0.025)] overflow-hidden flex flex-col items-center text-center"
         >
-          {/* Cover Photo / Sampul Banner */}
-          <div className="w-full h-32 sm:h-40 relative bg-slate-800 overflow-hidden">
+          {/* Top Navy Banner */}
+          <div className="w-full h-28 sm:h-32 bg-[#0B1528] relative flex items-center justify-center overflow-hidden">
             {customer.coverPath ? (
               <img
                 src={customer.coverPath}
-                alt="Foto Sampul"
+                alt={`Sampul ${displayName}`}
                 className="w-full h-full object-cover"
               />
             ) : (
-              <div
-                className="w-full h-full relative"
-                style={{
-                  background: `linear-gradient(135deg, ${accent}ee 0%, #0f172a 100%)`,
-                }}
-              >
-                <div className="absolute inset-0 bg-black/20" />
+              <div className="w-full h-full flex items-center justify-center gap-2.5 pb-5">
+                <TautRibbonLogo />
+                <span className="text-white font-extrabold text-2xl tracking-widest font-sans">
+                  TAUT
+                </span>
               </div>
             )}
           </div>
 
-          <div className="p-6 -mt-14 relative z-10 flex flex-col items-center text-center">
-            {/* Logo / Foto Profil (Overlapping Cover) */}
-            {customer.logoPath ? (
-              <div className="relative mb-3.5">
+          {/* Squircle Avatar / Logo (Overlapping Banner) */}
+          <div className="relative -mt-11 sm:-mt-12 mb-3 z-10">
+            <div className="w-20 h-20 sm:w-22 sm:h-22 rounded-[22px] bg-[#0B1528] border-[3px] border-white shadow-md flex flex-col items-center justify-center overflow-hidden p-1.5">
+              {customer.logoPath ? (
                 <img
                   src={customer.logoPath}
                   alt={displayName}
-                  className="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl object-cover shadow-2xl border-4 border-slate-900 bg-slate-950"
+                  className="w-full h-full object-contain rounded-xl"
                 />
-              </div>
-            ) : (
-              <div
-                className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl flex items-center justify-center text-white text-3xl font-extrabold mb-3.5 shadow-2xl border-4 border-slate-900"
-                style={{ backgroundColor: accent }}
-              >
-                {displayName.charAt(0).toUpperCase()}
-              </div>
-            )}
-
-            {/* 1.1. Nama */}
-            <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
-              {displayName}
-            </h1>
-
-            {/* 1.2. Jabatan / Pekerjaan */}
-            {customer.jobTitle && (
-              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-800/90 border border-slate-700 text-xs font-semibold text-slate-300 mt-2">
-                <Briefcase className="w-3.5 h-3.5 text-blue-400" />
-                <span>{customer.jobTitle}</span>
-              </div>
-            )}
-
-            {/* Perusahaan (Jika nama pemilik berbeda dengan nama bisnis) */}
-            {customer.ownerName && customer.businessName && customer.ownerName !== customer.businessName && (
-              <p className="text-sm font-medium text-slate-400 mt-1">
-                {customer.businessName}
-              </p>
-            )}
-
-            {/* Tagline */}
-            {customer.tagline && (
-              <p className="text-xs sm:text-sm text-slate-300 mt-3 leading-relaxed max-w-xs">
-                {customer.tagline}
-              </p>
-            )}
-
-            {/* 1.3. Quick Action Buttons: Telpon, SMS, Email, Lokasi */}
-            <div className="grid grid-cols-4 gap-2.5 w-full mt-6 pt-5 border-t border-slate-800/80">
-              {/* Telpon */}
-              {primaryPhone ? (
-                <a
-                  href={`tel:${primaryPhone}`}
-                  onClick={() => trackClick("call")}
-                  id="btn-quick-call"
-                  title="Panggil Telpon"
-                  className="flex flex-col items-center justify-center p-3 rounded-2xl bg-slate-800/80 hover:bg-slate-700/90 border border-slate-700 text-slate-200 hover:text-white transition-all active:scale-95 group focus-visible:ring-2 focus-visible:ring-blue-500 focus:outline-none"
-                >
-                  <div className="w-9 h-9 rounded-xl bg-blue-500/15 text-blue-400 group-hover:bg-blue-500 group-hover:text-white flex items-center justify-center transition-colors mb-1">
-                    <Phone className="w-4 h-4" />
-                  </div>
-                  <span className="text-[11px] font-semibold">Telpon</span>
-                </a>
               ) : (
-                <div className="flex flex-col items-center justify-center p-3 rounded-2xl bg-slate-950/40 border border-slate-800/50 text-slate-600 opacity-50">
-                  <div className="w-9 h-9 rounded-xl bg-slate-900 text-slate-600 flex items-center justify-center mb-1">
-                    <Phone className="w-4 h-4" />
-                  </div>
-                  <span className="text-[11px]">Telpon</span>
-                </div>
-              )}
-
-              {/* SMS */}
-              {primaryPhone ? (
-                <a
-                  href={`sms:${primaryPhone}`}
-                  onClick={() => trackClick("sms")}
-                  id="btn-quick-sms"
-                  title="Kirim SMS"
-                  className="flex flex-col items-center justify-center p-3 rounded-2xl bg-slate-800/80 hover:bg-slate-700/90 border border-slate-700 text-slate-200 hover:text-white transition-all active:scale-95 group focus-visible:ring-2 focus-visible:ring-blue-500 focus:outline-none"
-                >
-                  <div className="w-9 h-9 rounded-xl bg-emerald-500/15 text-emerald-400 group-hover:bg-emerald-500 group-hover:text-white flex items-center justify-center transition-colors mb-1">
-                    <MessageSquare className="w-4 h-4" />
-                  </div>
-                  <span className="text-[11px] font-semibold">SMS</span>
-                </a>
-              ) : (
-                <div className="flex flex-col items-center justify-center p-3 rounded-2xl bg-slate-950/40 border border-slate-800/50 text-slate-600 opacity-50">
-                  <div className="w-9 h-9 rounded-xl bg-slate-900 text-slate-600 flex items-center justify-center mb-1">
-                    <MessageSquare className="w-4 h-4" />
-                  </div>
-                  <span className="text-[11px]">SMS</span>
-                </div>
-              )}
-
-              {/* Email */}
-              {customer.email ? (
-                <a
-                  href={`mailto:${customer.email}`}
-                  onClick={() => trackClick("email")}
-                  id="btn-quick-email"
-                  title="Kirim Email"
-                  className="flex flex-col items-center justify-center p-3 rounded-2xl bg-slate-800/80 hover:bg-slate-700/90 border border-slate-700 text-slate-200 hover:text-white transition-all active:scale-95 group focus-visible:ring-2 focus-visible:ring-blue-500 focus:outline-none"
-                >
-                  <div className="w-9 h-9 rounded-xl bg-amber-500/15 text-amber-400 group-hover:bg-amber-500 group-hover:text-white flex items-center justify-center transition-colors mb-1">
-                    <Mail className="w-4 h-4" />
-                  </div>
-                  <span className="text-[11px] font-semibold">Email</span>
-                </a>
-              ) : (
-                <div className="flex flex-col items-center justify-center p-3 rounded-2xl bg-slate-950/40 border border-slate-800/50 text-slate-600 opacity-50">
-                  <div className="w-9 h-9 rounded-xl bg-slate-900 text-slate-600 flex items-center justify-center mb-1">
-                    <Mail className="w-4 h-4" />
-                  </div>
-                  <span className="text-[11px]">Email</span>
-                </div>
-              )}
-
-              {/* Lokasi */}
-              {customer.address || customer.city ? (
-                <a
-                  href="#section-lokasi"
-                  id="btn-quick-lokasi"
-                  title="Lihat Lokasi"
-                  className="flex flex-col items-center justify-center p-3 rounded-2xl bg-slate-800/80 hover:bg-slate-700/90 border border-slate-700 text-slate-200 hover:text-white transition-all active:scale-95 group focus-visible:ring-2 focus-visible:ring-blue-500 focus:outline-none"
-                >
-                  <div className="w-9 h-9 rounded-xl bg-purple-500/15 text-purple-400 group-hover:bg-purple-500 group-hover:text-white flex items-center justify-center transition-colors mb-1">
-                    <MapPin className="w-4 h-4" />
-                  </div>
-                  <span className="text-[11px] font-semibold">Lokasi</span>
-                </a>
-              ) : (
-                <div className="flex flex-col items-center justify-center p-3 rounded-2xl bg-slate-950/40 border border-slate-800/50 text-slate-600 opacity-50">
-                  <div className="w-9 h-9 rounded-xl bg-slate-900 text-slate-600 flex items-center justify-center mb-1">
-                    <MapPin className="w-4 h-4" />
-                  </div>
-                  <span className="text-[11px]">Lokasi</span>
+                <div className="flex flex-col items-center justify-center">
+                  <TautRibbonLogo className="scale-75" />
+                  <span className="text-white text-[9px] font-extrabold tracking-widest -mt-1">
+                    TAUT
+                  </span>
                 </div>
               )}
             </div>
+          </div>
+
+          {/* Profile Name */}
+          <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight px-4">
+            {displayName}
+          </h1>
+
+          {/* Job Title / Role Badge */}
+          {customer.jobTitle && (
+            <div className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-[#FAF6EE] border border-[#EBDDC3] text-[#8C6D3F] text-xs font-medium mt-2 shadow-sm">
+              <span className="text-xs">💼</span>
+              <span>{customer.jobTitle}</span>
+            </div>
+          )}
+
+          {/* Company Name */}
+          {customer.businessName && (
+            <p className="text-xs font-semibold text-slate-500 uppercase tracking-widest mt-2 px-4">
+              {customer.businessName}
+            </p>
+          )}
+
+          {/* Bio / Tagline */}
+          {customer.tagline && (
+            <p className="text-xs text-slate-400 mt-1 max-w-xs px-4 font-normal">
+              {customer.tagline}
+            </p>
+          )}
+
+          {/* 4 Quick Action Buttons */}
+          <div className="grid grid-cols-4 gap-2 w-full px-4 pt-5 pb-5 mt-4 border-t border-[#F0ECE3]">
+            {/* Telpon */}
+            <a
+              href={primaryPhone ? `tel:${primaryPhone}` : "#"}
+              onClick={() => trackClick("call")}
+              title="Panggil Telpon"
+              className="flex flex-col items-center justify-center py-2.5 px-1 rounded-2xl bg-[#F9F8F5] hover:bg-[#F2EFE8] border border-[#ECE7DE] text-slate-700 transition-all active:scale-95 group"
+            >
+              <Phone className="w-4 h-4 text-slate-700 mb-1.5 group-hover:scale-110 transition-transform" />
+              <span className="text-[11px] font-medium text-slate-700">Telpon</span>
+            </a>
+
+            {/* SMS */}
+            <a
+              href={primaryPhone ? `sms:${primaryPhone}` : "#"}
+              onClick={() => trackClick("sms")}
+              title="Kirim SMS"
+              className="flex flex-col items-center justify-center py-2.5 px-1 rounded-2xl bg-[#F9F8F5] hover:bg-[#F2EFE8] border border-[#ECE7DE] text-slate-700 transition-all active:scale-95 group"
+            >
+              <MessageSquare className="w-4 h-4 text-slate-700 mb-1.5 group-hover:scale-110 transition-transform" />
+              <span className="text-[11px] font-medium text-slate-700">SMS</span>
+            </a>
+
+            {/* Email */}
+            <a
+              href={customer.email ? `mailto:${customer.email}` : "#"}
+              onClick={() => trackClick("email")}
+              title="Kirim Email"
+              className="flex flex-col items-center justify-center py-2.5 px-1 rounded-2xl bg-[#F9F8F5] hover:bg-[#F2EFE8] border border-[#ECE7DE] text-slate-700 transition-all active:scale-95 group"
+            >
+              <Mail className="w-4 h-4 text-slate-700 mb-1.5 group-hover:scale-110 transition-transform" />
+              <span className="text-[11px] font-medium text-slate-700">Email</span>
+            </a>
+
+            {/* Lokasi */}
+            <a
+              href="#section-lokasi"
+              title="Lihat Lokasi"
+              className="flex flex-col items-center justify-center py-2.5 px-1 rounded-2xl bg-[#F9F8F5] hover:bg-[#F2EFE8] border border-[#ECE7DE] text-slate-700 transition-all active:scale-95 group"
+            >
+              <MapPin className="w-4 h-4 text-slate-700 mb-1.5 group-hover:scale-110 transition-transform" />
+              <span className="text-[11px] font-medium text-slate-700">Lokasi</span>
+            </a>
           </div>
         </section>
 
-        {/* SECTION 2: KONTAK */}
+        {/* ============================================================ */}
+        {/* CARD 2: KONTAK */}
+        {/* ============================================================ */}
         <section
-          aria-label="Detail Kontak"
-          className="w-full bg-slate-900/90 border border-slate-800 rounded-3xl p-6 backdrop-blur-xl shadow-xl space-y-4"
+          aria-label="Detail Kontak Resmi"
+          className="w-full bg-white rounded-[26px] border border-[#ECE7DE] shadow-[0_2px_12px_rgba(0,0,0,0.025)] p-4 sm:p-5 space-y-3"
         >
-          <div className="flex items-center justify-between pb-3 border-b border-slate-800">
-            <h2 className="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
-              <User className="w-4 h-4 text-blue-400" />
-              <span>Kontak</span>
-            </h2>
-            <span className="text-[10px] text-slate-400 font-medium">Informasi Resmi</span>
+          {/* Header */}
+          <div className="flex items-center justify-between pb-1">
+            <div className="flex items-center gap-2">
+              <User className="w-4 h-4 text-slate-700" />
+              <h2 className="text-xs font-bold text-slate-900 tracking-wider uppercase">
+                KONTAK
+              </h2>
+            </div>
+            <span className="text-[11px] font-medium text-[#9E8357]">
+              Informasi Resmi
+            </span>
           </div>
 
-          <div className="space-y-3">
-            {/* 2.1. Nama */}
-            <div className="p-3 bg-slate-950/70 rounded-2xl border border-slate-800/80 flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-xl bg-blue-500/10 text-blue-400 flex items-center justify-center">
+          <div className="space-y-2.5">
+            {/* Nama */}
+            <div className="p-3 rounded-2xl bg-[#F9F8F5] border border-[#ECE7DE] flex items-center justify-between">
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="w-9 h-9 rounded-xl bg-white border border-[#EAE5DC] flex items-center justify-center text-slate-600 shrink-0">
                   <User className="w-4 h-4" />
                 </div>
-                <div>
-                  <span className="text-[10px] text-slate-400 block font-medium">Nama</span>
-                  <span className="text-xs font-semibold text-white">{displayName}</span>
+                <div className="min-w-0">
+                  <span className="text-[10px] text-slate-400 font-medium block leading-tight">
+                    Nama
+                  </span>
+                  <span className="text-xs sm:text-sm font-bold text-slate-900 truncate block">
+                    {displayName}
+                  </span>
                 </div>
               </div>
             </div>
 
-            {/* 2.2. No Telpon */}
+            {/* Nomor Telpon */}
             {primaryPhone && (
-              <div className="p-3 bg-slate-950/70 rounded-2xl border border-slate-800/80 flex items-center justify-between">
+              <div className="p-3 rounded-2xl bg-[#F9F8F5] border border-[#ECE7DE] flex items-center justify-between">
                 <div className="flex items-center gap-3 min-w-0 pr-2">
-                  <div className="w-8 h-8 rounded-xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center shrink-0">
+                  <div className="w-9 h-9 rounded-xl bg-white border border-[#EAE5DC] flex items-center justify-center text-slate-600 shrink-0">
                     <Phone className="w-4 h-4" />
                   </div>
                   <div className="min-w-0">
-                    <span className="text-[10px] text-slate-400 block font-medium">Nomor Telpon</span>
+                    <span className="text-[10px] text-slate-400 font-medium block leading-tight">
+                      Nomor Telpon
+                    </span>
                     <a
                       href={`tel:${primaryPhone}`}
                       onClick={() => trackClick("call")}
-                      className="text-xs font-semibold text-white hover:text-blue-400 transition-colors truncate block"
+                      className="text-xs sm:text-sm font-bold text-slate-900 hover:text-blue-600 transition-colors truncate block"
                     >
                       +{primaryPhone}
                     </a>
                   </div>
                 </div>
                 <button
-                  onClick={() => copyToClipboard(`+${primaryPhone}`, "phone")}
-                  title="Salin Nomor Telpon"
-                  className="p-2 text-slate-400 hover:text-white rounded-xl bg-slate-900 border border-slate-800 hover:bg-slate-800 transition-colors"
+                  onClick={() => copyToClipboard(`+${primaryPhone}`, "Nomor telepon")}
+                  aria-label="Salin nomor telepon"
+                  title="Salin nomor telepon"
+                  className="p-2 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-white border border-transparent hover:border-[#EAE5DC] transition active:scale-95"
                 >
-                  {copiedField === "phone" ? (
-                    <Check className="w-3.5 h-3.5 text-emerald-400" />
-                  ) : (
-                    <Copy className="w-3.5 h-3.5" />
-                  )}
+                  <Copy className="w-3.5 h-3.5" />
                 </button>
               </div>
             )}
 
-            {/* 2.3. Email */}
+            {/* Email */}
             {customer.email && (
-              <div className="p-3 bg-slate-950/70 rounded-2xl border border-slate-800/80 flex items-center justify-between">
+              <div className="p-3 rounded-2xl bg-[#F9F8F5] border border-[#ECE7DE] flex items-center justify-between">
                 <div className="flex items-center gap-3 min-w-0 pr-2">
-                  <div className="w-8 h-8 rounded-xl bg-amber-500/10 text-amber-400 flex items-center justify-center shrink-0">
+                  <div className="w-9 h-9 rounded-xl bg-white border border-[#EAE5DC] flex items-center justify-center text-slate-600 shrink-0">
                     <Mail className="w-4 h-4" />
                   </div>
                   <div className="min-w-0">
-                    <span className="text-[10px] text-slate-400 block font-medium">Email</span>
+                    <span className="text-[10px] text-slate-400 font-medium block leading-tight">
+                      Email
+                    </span>
                     <a
                       href={`mailto:${customer.email}`}
                       onClick={() => trackClick("email")}
-                      className="text-xs font-semibold text-white hover:text-blue-400 transition-colors truncate block"
+                      className="text-xs sm:text-sm font-bold text-slate-900 hover:text-blue-600 transition-colors truncate block"
                     >
                       {customer.email}
                     </a>
                   </div>
                 </div>
                 <button
-                  onClick={() => copyToClipboard(customer.email || "", "email")}
-                  title="Salin Email"
-                  className="p-2 text-slate-400 hover:text-white rounded-xl bg-slate-900 border border-slate-800 hover:bg-slate-800 transition-colors"
+                  onClick={() => copyToClipboard(customer.email || "", "Email")}
+                  aria-label="Salin email"
+                  title="Salin email"
+                  className="p-2 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-white border border-transparent hover:border-[#EAE5DC] transition active:scale-95"
                 >
-                  {copiedField === "email" ? (
-                    <Check className="w-3.5 h-3.5 text-emerald-400" />
-                  ) : (
-                    <Copy className="w-3.5 h-3.5" />
-                  )}
+                  <Copy className="w-3.5 h-3.5" />
                 </button>
               </div>
             )}
 
-            {/* 2.4. Perusahaan */}
+            {/* Perusahaan */}
             {customer.businessName && (
-              <div className="p-3 bg-slate-950/70 rounded-2xl border border-slate-800/80 flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-xl bg-purple-500/10 text-purple-400 flex items-center justify-center">
+              <div className="p-3 rounded-2xl bg-[#F9F8F5] border border-[#ECE7DE] flex items-center justify-between">
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="w-9 h-9 rounded-xl bg-white border border-[#EAE5DC] flex items-center justify-center text-slate-600 shrink-0">
                     <Building2 className="w-4 h-4" />
                   </div>
-                  <div>
-                    <span className="text-[10px] text-slate-400 block font-medium">Perusahaan</span>
-                    <span className="text-xs font-semibold text-white">{customer.businessName}</span>
+                  <div className="min-w-0">
+                    <span className="text-[10px] text-slate-400 font-medium block leading-tight">
+                      Perusahaan
+                    </span>
+                    <span className="text-xs sm:text-sm font-bold text-slate-900 truncate block">
+                      {customer.businessName}
+                    </span>
                   </div>
                 </div>
               </div>
             )}
-
-            {/* Save Contact vCard CTA */}
-            <div className="pt-2">
-              <a
-                href={`/c/${customer.slug}/vcard`}
-                onClick={() => trackClick("vcard")}
-                id="btn-save-contact"
-                className="w-full min-h-[48px] py-3.5 px-5 rounded-2xl font-bold text-white flex items-center justify-between shadow-lg transition-all duration-200 hover:brightness-110 active:scale-[0.98] group focus-visible:ring-2 focus-visible:ring-emerald-500 focus:outline-none"
-                style={{ backgroundColor: accent }}
-              >
-                <div className="flex items-center gap-3">
-                  <div className="w-7 h-7 rounded-full bg-white/20 flex items-center justify-center">
-                    <Download className="w-4 h-4 text-white" />
-                  </div>
-                  <span className="text-sm">Simpan Kontak ke HP (.vcf)</span>
-                </div>
-                <Download className="w-4 h-4 opacity-70 group-hover:opacity-100 transition-opacity" />
-              </a>
-            </div>
           </div>
+
+          {/* Simpan Kontak ke HP Button */}
+          <a
+            href={`/c/${customer.slug}/vcard`}
+            onClick={handleVcardDownload}
+            id="btn-save-contact"
+            className="w-full py-3.5 px-4 rounded-xl bg-[#0B1528] hover:bg-[#162238] active:scale-[0.98] text-white flex items-center justify-between shadow-md transition font-semibold text-xs sm:text-sm mt-1"
+          >
+            <Download className="w-4 h-4 text-white/90" />
+            <span>Simpan Kontak ke HP (.vcf)</span>
+            <Download className="w-4 h-4 text-white/90" />
+          </a>
         </section>
 
-        {/* SECTION 3: LOKASI */}
+        {/* ============================================================ */}
+        {/* CARD 3: LOKASI */}
+        {/* ============================================================ */}
         {(customer.address || customer.city) && (
           <section
             id="section-lokasi"
             aria-label="Lokasi Bisnis"
-            className="w-full bg-slate-900/90 border border-slate-800 rounded-3xl p-6 backdrop-blur-xl shadow-xl space-y-4"
+            className="w-full bg-white rounded-[26px] border border-[#ECE7DE] shadow-[0_2px_12px_rgba(0,0,0,0.025)] p-4 sm:p-5 space-y-3"
           >
-            <div className="flex items-center justify-between pb-3 border-b border-slate-800">
-              <h2 className="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
-                <MapPin className="w-4 h-4 text-purple-400" />
-                <span>Lokasi</span>
-              </h2>
+            {/* Header */}
+            <div className="flex items-center justify-between pb-1">
+              <div className="flex items-center gap-2">
+                <MapPin className="w-4 h-4 text-slate-700" />
+                <h2 className="text-xs font-bold text-slate-900 tracking-wider uppercase">
+                  LOKASI
+                </h2>
+              </div>
               {customer.city && (
-                <span className="text-xs font-bold text-purple-400 bg-purple-500/10 px-2.5 py-0.5 rounded-full border border-purple-500/20">
+                <span className="text-[11px] font-medium text-[#9E8357] bg-[#FDF6ED] border border-[#F2E2CE] px-2.5 py-0.5 rounded-full">
                   {customer.city}
                 </span>
               )}
             </div>
 
-            <div className="p-3.5 bg-slate-950/70 rounded-2xl border border-slate-800/80 text-xs text-slate-300 leading-relaxed">
-              <p className="font-medium text-slate-200">{customer.address}</p>
+            {/* Address Box */}
+            <div className="p-3.5 rounded-2xl bg-[#F9F8F5] border border-[#ECE7DE] text-xs text-slate-700 leading-relaxed">
+              <p className="font-normal">{customer.address}</p>
               {customer.city && customer.address !== customer.city && (
-                <p className="text-[11px] text-slate-400 mt-1">{customer.city}</p>
+                <p className="text-[11px] text-slate-400 font-medium mt-1">
+                  {customer.city}
+                </p>
               )}
             </div>
 
+            {/* Show on Map Button */}
             <a
               href={mapsLink}
               target="_blank"
               rel="noopener noreferrer"
               onClick={() => trackClick("maps")}
               id="btn-show-on-map"
-              className="w-full min-h-[44px] py-3 px-5 rounded-2xl font-semibold bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-100 flex items-center justify-between transition-all duration-200 active:scale-[0.98] group focus-visible:ring-2 focus-visible:ring-blue-500 focus:outline-none"
+              className="w-full p-3 rounded-2xl bg-[#F9F8F5] hover:bg-[#F2EFE8] border border-[#ECE7DE] flex items-center justify-between text-slate-800 transition-all active:scale-[0.98]"
             >
               <div className="flex items-center gap-3">
-                <div className="w-6 h-6 rounded-full bg-purple-500/20 text-purple-400 flex items-center justify-center">
-                  <MapPin className="w-3.5 h-3.5" />
+                <div className="w-8 h-8 rounded-xl bg-[#EFE8DD] text-[#8C6D3F] flex items-center justify-center shrink-0">
+                  <MapPin className="w-4 h-4" />
                 </div>
-                <span className="text-xs font-bold">Show on Map (Buka di Peta)</span>
+                <span className="text-xs font-semibold text-slate-800">
+                  Show on Map (Buka di Peta)
+                </span>
               </div>
-              <ExternalLink className="w-3.5 h-3.5 opacity-70 group-hover:opacity-100 transition-opacity" />
+              <ExternalLink className="w-3.5 h-3.5 text-slate-400" />
             </a>
           </section>
         )}
 
-        {/* SECTION 4: WEBSITE */}
+        {/* ============================================================ */}
+        {/* CARD 4: WEBSITE */}
+        {/* ============================================================ */}
         {customer.website && (
           <section
             aria-label="Website Resmi"
-            className="w-full bg-slate-900/90 border border-slate-800 rounded-3xl p-6 backdrop-blur-xl shadow-xl space-y-3"
+            className="w-full bg-white rounded-[26px] border border-[#ECE7DE] shadow-[0_2px_12px_rgba(0,0,0,0.025)] p-4 sm:p-5 space-y-3"
           >
-            <div className="flex items-center justify-between pb-3 border-b border-slate-800">
-              <h2 className="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
-                <Globe className="w-4 h-4 text-blue-400" />
-                <span>Website</span>
+            {/* Header */}
+            <div className="flex items-center gap-2 pb-1">
+              <Globe className="w-4 h-4 text-slate-700" />
+              <h2 className="text-xs font-bold text-slate-900 tracking-wider uppercase">
+                WEBSITE
               </h2>
             </div>
 
+            {/* Website Row */}
             <a
               href={customer.website}
               target="_blank"
               rel="noopener noreferrer"
               onClick={() => trackClick("website")}
               id="btn-website"
-              className="w-full min-h-[44px] py-3.5 px-4 rounded-2xl bg-slate-950/80 hover:bg-slate-800 border border-slate-800 hover:border-slate-700 text-slate-200 flex items-center justify-between transition-all duration-200 active:scale-[0.98] group focus-visible:ring-2 focus-visible:ring-blue-500 focus:outline-none"
+              className="w-full p-3 rounded-2xl bg-[#F9F8F5] hover:bg-[#F2EFE8] border border-[#ECE7DE] flex items-center justify-between transition-all active:scale-[0.98]"
             >
               <div className="flex items-center gap-3 min-w-0 pr-2">
-                <div className="w-8 h-8 rounded-xl bg-blue-500/15 text-blue-400 flex items-center justify-center shrink-0">
+                <div className="w-9 h-9 rounded-xl bg-white border border-[#EAE5DC] flex items-center justify-center text-slate-600 shrink-0">
                   <Globe className="w-4 h-4" />
                 </div>
                 <div className="min-w-0">
-                  <span className="text-[10px] text-slate-400 block font-medium">Situs Resmi</span>
-                  <span className="text-xs font-bold text-white group-hover:text-blue-400 transition-colors truncate block">
-                    {customer.website.replace(/^https?:\/\//, "").replace(/\/$/, "")}
+                  <span className="text-[10px] text-slate-400 font-medium block leading-tight">
+                    Situs Resmi
+                  </span>
+                  <span className="text-xs sm:text-sm font-bold text-slate-900 truncate block">
+                    {displayWebsite}
                   </span>
                 </div>
               </div>
-              <ExternalLink className="w-4 h-4 opacity-70 group-hover:opacity-100 transition-opacity shrink-0" />
+              <ExternalLink className="w-3.5 h-3.5 text-slate-400 shrink-0" />
             </a>
           </section>
         )}
 
-        {/* SECTION 5: MEDIA SOSIAL & CHAT */}
+        {/* ============================================================ */}
+        {/* CARD 5: MEDIA SOSIAL & CHAT */}
+        {/* ============================================================ */}
         <section
           aria-label="Media Sosial dan Chat"
-          className="w-full bg-slate-900/90 border border-slate-800 rounded-3xl p-6 backdrop-blur-xl shadow-xl space-y-3"
+          className="w-full bg-white rounded-[26px] border border-[#ECE7DE] shadow-[0_2px_12px_rgba(0,0,0,0.025)] p-4 sm:p-5 space-y-2.5"
         >
-          <div className="flex items-center justify-between pb-3 border-b border-slate-800">
-            <h2 className="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
-              <Share2 className="w-4 h-4 text-emerald-400" />
-              <span>Media Sosial & Chat</span>
+          {/* Header */}
+          <div className="flex items-center gap-2 pb-1">
+            <Share2 className="w-4 h-4 text-slate-700" />
+            <h2 className="text-xs font-bold text-slate-900 tracking-wider uppercase">
+              MEDIA SOSIAL & CHAT
             </h2>
           </div>
 
-          <div className="space-y-2.5">
-            {/* 5.3. WhatsApp */}
+          <div className="space-y-2">
+            {/* WhatsApp */}
             {customer.whatsapp && (
               <a
                 href={waUrl}
@@ -550,120 +633,218 @@ export default function PublicCardView({ customer, footerText }: PublicCardViewP
                 rel="noopener noreferrer"
                 onClick={() => trackClick("whatsapp")}
                 id="btn-whatsapp-chat"
-                className="w-full min-h-[44px] py-3 px-4 rounded-2xl bg-slate-950/80 hover:bg-slate-800 border border-slate-800 hover:border-slate-700 text-slate-100 flex items-center justify-between transition-all duration-200 active:scale-[0.98] group focus-visible:ring-2 focus-visible:ring-emerald-500 focus:outline-none"
+                className="w-full p-3 rounded-2xl bg-[#F9F8F5] hover:bg-[#F2EFE8] border border-[#ECE7DE] flex items-center justify-between transition-all active:scale-[0.98]"
               >
-                <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-xl bg-[#25D366]/15 text-[#25D366] flex items-center justify-center shrink-0">
-                    <WhatsAppIcon size={20} />
+                <div className="flex items-center gap-3 min-w-0 pr-2">
+                  <div className="w-9 h-9 rounded-xl bg-white border border-[#EAE5DC] flex items-center justify-center text-[#25D366] shrink-0">
+                    <WhatsAppIcon size={18} />
                   </div>
-                  <div>
-                    <span className="text-xs font-bold text-white block">WhatsApp</span>
-                    <span className="text-[10px] text-slate-400">+{customer.whatsapp}</span>
+                  <div className="min-w-0">
+                    <span className="text-xs sm:text-sm font-bold text-slate-900 block">
+                      WhatsApp
+                    </span>
+                    <span className="text-[11px] text-slate-500 block truncate">
+                      +{customer.whatsapp}
+                    </span>
                   </div>
                 </div>
-                <ExternalLink className="w-3.5 h-3.5 opacity-70 group-hover:opacity-100 transition-opacity" />
+                <ExternalLink className="w-3.5 h-3.5 text-slate-400 shrink-0" />
               </a>
             )}
 
-            {/* 5.2. Instagram */}
+            {/* Instagram */}
             {customer.instagramUsername && (
               <a
-                href={`https://instagram.com/${customer.instagramUsername}`}
+                href={`https://instagram.com/${cleanIg}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={() => trackClick("instagram")}
                 id="btn-instagram"
-                className="w-full min-h-[44px] py-3 px-4 rounded-2xl bg-slate-950/80 hover:bg-slate-800 border border-slate-800 hover:border-slate-700 text-slate-100 flex items-center justify-between transition-all duration-200 active:scale-[0.98] group focus-visible:ring-2 focus-visible:ring-pink-500 focus:outline-none"
+                className="w-full p-3 rounded-2xl bg-[#F9F8F5] hover:bg-[#F2EFE8] border border-[#ECE7DE] flex items-center justify-between transition-all active:scale-[0.98]"
               >
-                <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-[#F58529]/20 via-[#DD2A7B]/20 to-[#8134AF]/20 text-[#E1306C] flex items-center justify-center shrink-0">
-                    <InstagramIcon size={20} />
+                <div className="flex items-center gap-3 min-w-0 pr-2">
+                  <div className="w-9 h-9 rounded-xl bg-white border border-[#EAE5DC] flex items-center justify-center text-[#E1306C] shrink-0">
+                    <InstagramIcon size={18} />
                   </div>
-                  <div>
-                    <span className="text-xs font-bold text-white block">Instagram</span>
-                    <span className="text-[10px] text-slate-400">@{customer.instagramUsername}</span>
+                  <div className="min-w-0">
+                    <span className="text-xs sm:text-sm font-bold text-slate-900 block">
+                      Instagram
+                    </span>
+                    <span className="text-[11px] text-slate-500 block truncate">
+                      @{cleanIg}
+                    </span>
                   </div>
                 </div>
-                <ExternalLink className="w-3.5 h-3.5 opacity-70 group-hover:opacity-100 transition-opacity" />
+                <ExternalLink className="w-3.5 h-3.5 text-slate-400 shrink-0" />
               </a>
             )}
 
-            {/* 5.1. Facebook */}
+            {/* Facebook */}
             {customer.facebookUrl && (
               <a
-                href={customer.facebookUrl}
+                href={
+                  customer.facebookUrl.startsWith("http")
+                    ? customer.facebookUrl
+                    : `https://${customer.facebookUrl}`
+                }
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={() => trackClick("facebook")}
                 id="btn-facebook"
-                className="w-full min-h-[44px] py-3 px-4 rounded-2xl bg-slate-950/80 hover:bg-slate-800 border border-slate-800 hover:border-slate-700 text-slate-100 flex items-center justify-between transition-all duration-200 active:scale-[0.98] group focus-visible:ring-2 focus-visible:ring-blue-600 focus:outline-none"
+                className="w-full p-3 rounded-2xl bg-[#F9F8F5] hover:bg-[#F2EFE8] border border-[#ECE7DE] flex items-center justify-between transition-all active:scale-[0.98]"
               >
-                <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-xl bg-[#1877F2]/15 text-[#1877F2] flex items-center justify-center shrink-0">
-                    <FacebookIcon size={20} />
+                <div className="flex items-center gap-3 min-w-0 pr-2">
+                  <div className="w-9 h-9 rounded-xl bg-white border border-[#EAE5DC] flex items-center justify-center text-[#1877F2] shrink-0">
+                    <FacebookIcon size={18} />
                   </div>
-                  <div>
-                    <span className="text-xs font-bold text-white block">Facebook</span>
-                    <span className="text-[10px] text-slate-400">Halaman / Profil</span>
+                  <div className="min-w-0">
+                    <span className="text-xs sm:text-sm font-bold text-slate-900 block">
+                      Facebook
+                    </span>
+                    <span className="text-[11px] text-slate-500 block truncate">
+                      Halaman / Profil
+                    </span>
                   </div>
                 </div>
-                <ExternalLink className="w-3.5 h-3.5 opacity-70 group-hover:opacity-100 transition-opacity" />
+                <ExternalLink className="w-3.5 h-3.5 text-slate-400 shrink-0" />
               </a>
             )}
 
-            {/* 5.4. TikTok */}
+            {/* TikTok */}
             {customer.tiktokUsername && (
               <a
-                href={`https://tiktok.com/@${customer.tiktokUsername}`}
+                href={`https://tiktok.com/@${cleanTiktok}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={() => trackClick("tiktok")}
                 id="btn-tiktok"
-                className="w-full min-h-[44px] py-3 px-4 rounded-2xl bg-slate-950/80 hover:bg-slate-800 border border-slate-800 hover:border-slate-700 text-slate-100 flex items-center justify-between transition-all duration-200 active:scale-[0.98] group focus-visible:ring-2 focus-visible:ring-cyan-500 focus:outline-none"
+                className="w-full p-3 rounded-2xl bg-[#F9F8F5] hover:bg-[#F2EFE8] border border-[#ECE7DE] flex items-center justify-between transition-all active:scale-[0.98]"
               >
-                <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-xl bg-slate-800 text-white flex items-center justify-center shrink-0">
-                    <TikTokIcon size={20} />
+                <div className="flex items-center gap-3 min-w-0 pr-2">
+                  <div className="w-9 h-9 rounded-xl bg-white border border-[#EAE5DC] flex items-center justify-center text-slate-900 shrink-0">
+                    <TikTokIcon size={18} />
                   </div>
-                  <div>
-                    <span className="text-xs font-bold text-white block">TikTok</span>
-                    <span className="text-[10px] text-slate-400">@{customer.tiktokUsername}</span>
+                  <div className="min-w-0">
+                    <span className="text-xs sm:text-sm font-bold text-slate-900 block">
+                      TikTok
+                    </span>
+                    <span className="text-[11px] text-slate-500 block truncate">
+                      @{cleanTiktok}
+                    </span>
                   </div>
                 </div>
-                <ExternalLink className="w-3.5 h-3.5 opacity-70 group-hover:opacity-100 transition-opacity" />
+                <ExternalLink className="w-3.5 h-3.5 text-slate-400 shrink-0" />
               </a>
             )}
 
-            {/* 5.5. LinkedIn / dll */}
+            {/* LinkedIn */}
             {customer.linkedinUrl && (
               <a
-                href={customer.linkedinUrl}
+                href={
+                  customer.linkedinUrl.startsWith("http")
+                    ? customer.linkedinUrl
+                    : `https://${customer.linkedinUrl}`
+                }
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={() => trackClick("linkedin")}
                 id="btn-linkedin"
-                className="w-full min-h-[44px] py-3 px-4 rounded-2xl bg-slate-950/80 hover:bg-slate-800 border border-slate-800 hover:border-slate-700 text-slate-100 flex items-center justify-between transition-all duration-200 active:scale-[0.98] group focus-visible:ring-2 focus-visible:ring-sky-500 focus:outline-none"
+                className="w-full p-3 rounded-2xl bg-[#F9F8F5] hover:bg-[#F2EFE8] border border-[#ECE7DE] flex items-center justify-between transition-all active:scale-[0.98]"
               >
-                <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-xl bg-[#0A66C2]/15 text-[#0A66C2] flex items-center justify-center shrink-0">
-                    <LinkedInIcon size={20} />
+                <div className="flex items-center gap-3 min-w-0 pr-2">
+                  <div className="w-9 h-9 rounded-xl bg-white border border-[#EAE5DC] flex items-center justify-center text-[#0A66C2] shrink-0">
+                    <LinkedInIcon size={18} />
                   </div>
-                  <div>
-                    <span className="text-xs font-bold text-white block">LinkedIn</span>
-                    <span className="text-[10px] text-slate-400">Profil Profesional</span>
+                  <div className="min-w-0">
+                    <span className="text-xs sm:text-sm font-bold text-slate-900 block">
+                      LinkedIn
+                    </span>
+                    <span className="text-[11px] text-slate-500 block truncate">
+                      Profil Profesional
+                    </span>
                   </div>
                 </div>
-                <ExternalLink className="w-3.5 h-3.5 opacity-70 group-hover:opacity-100 transition-opacity" />
+                <ExternalLink className="w-3.5 h-3.5 text-slate-400 shrink-0" />
               </a>
             )}
           </div>
         </section>
+
+        {/* Footer */}
+        <footer className="w-full flex items-center justify-center gap-3 pt-4 pb-8">
+          <div className="h-[1px] w-8 bg-stone-300" />
+          <span className="text-[11px] text-stone-400 font-normal">
+            Dibuat oleh {footerText || "TautSmart"}
+          </span>
+          <div className="h-[1px] w-8 bg-stone-300" />
+        </footer>
       </main>
 
-      {/* Footer Branding */}
-      <footer className="w-full max-w-md text-center py-6 text-xs text-slate-500">
-        <p>{footerText || "Dibuat dengan TautSmart"}</p>
-      </footer>
+      {/* QR Code Modal Dialog */}
+      {qrModalOpen && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="qr-modal-title"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in"
+          onClick={() => setQrModalOpen(false)}
+        >
+          <div
+            className="w-full max-w-sm bg-white border border-[#ECE7DE] rounded-3xl p-6 shadow-2xl relative text-center"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Close Button */}
+            <button
+              onClick={() => setQrModalOpen(false)}
+              aria-label="Tutup modal QR"
+              className="absolute top-4 right-4 p-2 text-slate-400 hover:text-slate-800 rounded-full bg-[#F9F8F5] hover:bg-stone-200 transition-colors"
+            >
+              <X className="w-4 h-4" />
+            </button>
+
+            <div className="w-10 h-10 rounded-2xl bg-[#FAF6EE] text-[#8C6D3F] border border-[#EBDDC3] flex items-center justify-center mx-auto mb-3">
+              <QrIcon className="w-5 h-5" />
+            </div>
+
+            <h3 id="qr-modal-title" className="text-lg font-bold text-slate-900">
+              Pindai Kartu Bisnis
+            </h3>
+            <p className="text-xs text-slate-500 mt-1 mb-5">
+              Arahkan kamera smartphone ke kode QR di bawah untuk membuka profil ini seketika.
+            </p>
+
+            {/* QR Code Container */}
+            <div className="p-4 bg-white rounded-2xl inline-block shadow-sm border border-[#ECE7DE] mb-5">
+              {qrDataUrl ? (
+                <img
+                  src={qrDataUrl}
+                  alt={`QR Code ${displayName}`}
+                  className="w-56 h-56 mx-auto object-contain"
+                />
+              ) : (
+                <div className="w-56 h-56 flex items-center justify-center text-slate-400 text-xs">
+                  Membuat kode QR...
+                </div>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <button
+                onClick={() => {
+                  if (typeof window !== "undefined") {
+                    navigator.clipboard.writeText(window.location.href);
+                    showToast("Tautan profil berhasil disalin");
+                  }
+                }}
+                className="w-full py-2.5 px-4 bg-[#0B1528] hover:bg-[#162238] text-xs font-semibold text-white rounded-xl transition-all flex items-center justify-center gap-2 active:scale-95 shadow-sm"
+              >
+                <Copy className="w-3.5 h-3.5" />
+                <span>Salin Tautan Profil</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

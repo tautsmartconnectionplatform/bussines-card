@@ -6,7 +6,6 @@ import {
   ShoppingBag,
   PlusCircle,
   Search,
-  Filter,
   FileSpreadsheet,
   Trash2,
   CheckCircle2,
@@ -15,6 +14,7 @@ import {
   ExternalLink,
   Loader2,
   Calendar,
+  X,
 } from "lucide-react";
 import { formatRupiah } from "@/lib/normalize";
 
@@ -155,20 +155,20 @@ export default function OrdersListPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-slate-800/80">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
-            Manajemen Pembelian & Pesanan
+          <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
+            Pesanan & Pembelian Kartu
           </h1>
           <p className="text-xs sm:text-sm text-slate-400 mt-1">
-            Pantau status pembayaran kartu, proses cetak fisik, dan pengiriman ke pelanggan
+            Pantau status pembayaran kartu fisik, proses cetak, dan pengiriman ke pelanggan
           </p>
         </div>
 
         <div className="flex items-center gap-2.5">
           <a
             href="/admin/export/orders.csv"
-            className="px-3.5 py-2.5 bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 hover:text-white text-xs font-semibold rounded-xl transition-colors flex items-center gap-2"
+            className="px-3.5 py-2.5 bg-[#0B0F19] hover:bg-[#162033] border border-slate-800 text-slate-300 hover:text-white text-xs font-semibold rounded-xl transition-colors flex items-center gap-2"
           >
             <FileSpreadsheet className="w-4 h-4 text-emerald-400" />
             <span>Ekspor CSV</span>
@@ -176,16 +176,16 @@ export default function OrdersListPage() {
 
           <button
             onClick={() => setModalOpen(true)}
-            className="px-4 py-2.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-xl transition-all shadow-lg shadow-blue-600/30 flex items-center gap-2 active:scale-95"
+            className="px-4 py-2.5 btn-gold text-black text-xs font-extrabold rounded-xl transition-all flex items-center gap-2 active:scale-95 shadow-md shadow-amber-500/15"
           >
-            <PlusCircle className="w-4 h-4" />
+            <PlusCircle className="w-4 h-4 text-black" />
             <span>Tambah Pesanan</span>
           </button>
         </div>
       </div>
 
       {/* Filter & Search Bar */}
-      <div className="p-4 rounded-2xl bg-slate-900/90 border border-slate-800 shadow-lg flex flex-col md:flex-row items-center justify-between gap-3">
+      <div className="p-4 rounded-3xl bg-[#0B0F19]/90 border border-slate-800 shadow-xl flex flex-col md:flex-row items-center justify-between gap-3">
         <div className="relative w-full md:w-80">
           <Search className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
           <input
@@ -196,7 +196,7 @@ export default function OrdersListPage() {
               setSearch(e.target.value);
               setPage(1);
             }}
-            className="w-full pl-10 pr-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-blue-500"
+            className="w-full pl-10 pr-4 py-2.5 bg-[#070A10] border border-slate-800 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-[#D4AF37]"
           />
         </div>
 
@@ -207,11 +207,11 @@ export default function OrdersListPage() {
               setPaymentStatus(e.target.value);
               setPage(1);
             }}
-            className="px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-slate-300 focus:outline-none"
+            className="px-3.5 py-2.5 bg-[#070A10] border border-slate-800 rounded-xl text-xs text-slate-300 focus:outline-none focus:border-[#D4AF37]"
           >
             <option value="all">Semua Status Bayar</option>
             <option value="belum_bayar">Belum Bayar</option>
-            <option value="dp">DP</option>
+            <option value="dp">DP (Uang Muka)</option>
             <option value="lunas">Lunas</option>
           </select>
 
@@ -221,7 +221,7 @@ export default function OrdersListPage() {
               setProductionStatus(e.target.value);
               setPage(1);
             }}
-            className="px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-slate-300 focus:outline-none"
+            className="px-3.5 py-2.5 bg-[#070A10] border border-slate-800 rounded-xl text-xs text-slate-300 focus:outline-none focus:border-[#D4AF37]"
           >
             <option value="all">Semua Status Produksi</option>
             <option value="menunggu">Menunggu</option>
@@ -233,11 +233,11 @@ export default function OrdersListPage() {
       </div>
 
       {/* Orders Table */}
-      <div className="rounded-2xl bg-slate-900/90 border border-slate-800 shadow-xl overflow-hidden">
+      <div className="rounded-3xl bg-[#0B0F19]/90 border border-slate-800/90 shadow-2xl overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="border-b border-slate-800 bg-slate-950/60 text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+              <tr className="border-b border-slate-800 bg-[#070A10] text-[11px] font-bold text-slate-400 uppercase tracking-wider">
                 <th className="p-4">Pelanggan</th>
                 <th className="p-4">Paket & Jumlah</th>
                 <th className="p-4">Total Harga</th>
@@ -247,28 +247,28 @@ export default function OrdersListPage() {
                 <th className="p-4 text-right">Aksi</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-800/80 text-xs">
+            <tbody className="divide-y divide-slate-800/60 text-xs">
               {loading ? (
                 <tr>
-                  <td colSpan={7} className="p-8 text-center text-slate-500">
-                    <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2 text-blue-500" />
+                  <td colSpan={7} className="p-8 text-center text-slate-400">
+                    <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2 text-[#D4AF37]" />
                     <span>Memuat daftar pesanan...</span>
                   </td>
                 </tr>
               ) : orders.length === 0 ? (
                 <tr>
                   <td colSpan={7} className="p-8 text-center text-slate-500">
-                    Tidak ada data pesanan yang sesuai filter.
+                    Tidak ada data pesanan yang sesuai dengan filter.
                   </td>
                 </tr>
               ) : (
                 orders.map((o) => (
-                  <tr key={o.id} className="hover:bg-slate-800/40 transition-colors">
+                  <tr key={o.id} className="hover:bg-[#101726]/60 transition-colors">
                     <td className="p-4">
                       <div>
                         <Link
                           href={`/admin/customers/${o.customer.id}`}
-                          className="font-bold text-white hover:text-blue-400 block"
+                          className="font-bold text-white hover:text-[#D4AF37] block"
                         >
                           {o.customer.businessName}
                         </Link>
@@ -292,7 +292,7 @@ export default function OrdersListPage() {
                         onChange={(e) =>
                           handleUpdateStatus(o.id, "paymentStatus", e.target.value)
                         }
-                        className={`text-[11px] font-semibold px-2.5 py-1 rounded-lg border focus:outline-none capitalize cursor-pointer ${
+                        className={`text-[11px] font-bold px-2.5 py-1 rounded-xl border focus:outline-none capitalize cursor-pointer ${
                           o.paymentStatus === "lunas"
                             ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/30"
                             : o.paymentStatus === "dp"
@@ -300,13 +300,13 @@ export default function OrdersListPage() {
                             : "bg-rose-500/10 text-rose-400 border-rose-500/30"
                         }`}
                       >
-                        <option value="belum_bayar" className="bg-slate-900 text-rose-400">
+                        <option value="belum_bayar" className="bg-[#0B0F19] text-rose-400">
                           Belum Bayar
                         </option>
-                        <option value="dp" className="bg-slate-900 text-amber-400">
+                        <option value="dp" className="bg-[#0B0F19] text-amber-400">
                           DP
                         </option>
-                        <option value="lunas" className="bg-slate-900 text-emerald-400">
+                        <option value="lunas" className="bg-[#0B0F19] text-emerald-400">
                           Lunas
                         </option>
                       </select>
@@ -317,18 +317,18 @@ export default function OrdersListPage() {
                         onChange={(e) =>
                           handleUpdateStatus(o.id, "productionStatus", e.target.value)
                         }
-                        className="text-[11px] font-semibold px-2.5 py-1 rounded-lg border border-slate-700 bg-slate-950 text-slate-200 focus:outline-none capitalize cursor-pointer"
+                        className="text-[11px] font-semibold px-2.5 py-1 rounded-xl border border-slate-700 bg-[#070A10] text-slate-200 focus:outline-none capitalize cursor-pointer"
                       >
-                        <option value="menunggu" className="bg-slate-900">
+                        <option value="menunggu" className="bg-[#0B0F19]">
                           Menunggu
                         </option>
-                        <option value="dicetak" className="bg-slate-900">
+                        <option value="dicetak" className="bg-[#0B0F19]">
                           Dicetak
                         </option>
-                        <option value="dikirim" className="bg-slate-900">
+                        <option value="dikirim" className="bg-[#0B0F19]">
                           Dikirim
                         </option>
-                        <option value="selesai" className="bg-slate-900">
+                        <option value="selesai" className="bg-[#0B0F19]">
                           Selesai
                         </option>
                       </select>
@@ -347,7 +347,7 @@ export default function OrdersListPage() {
                       <button
                         onClick={() => handleDeleteOrder(o.id)}
                         title="Hapus Pesanan"
-                        className="p-1.5 text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-colors"
+                        className="p-2 text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 rounded-xl transition-colors focus-visible:ring-2 focus-visible:ring-rose-500"
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>
@@ -362,20 +362,20 @@ export default function OrdersListPage() {
         {pagination.totalPages > 1 && (
           <div className="p-4 border-t border-slate-800 flex items-center justify-between text-xs text-slate-400">
             <span>
-              Halaman {pagination.page} dari {pagination.totalPages} ({pagination.total} total)
+              Halaman {pagination.page} dari {pagination.totalPages} ({pagination.total} total pesanan)
             </span>
             <div className="flex items-center gap-2">
               <button
                 disabled={page <= 1}
                 onClick={() => setPage(page - 1)}
-                className="px-3 py-1.5 rounded-lg bg-slate-950 border border-slate-800 disabled:opacity-50 hover:bg-slate-800 text-slate-300"
+                className="px-3.5 py-1.5 rounded-xl bg-[#070A10] border border-slate-800 disabled:opacity-40 hover:bg-slate-800 text-slate-300 transition-colors"
               >
                 Sebelumnya
               </button>
               <button
                 disabled={page >= pagination.totalPages}
                 onClick={() => setPage(page + 1)}
-                className="px-3 py-1.5 rounded-lg bg-slate-950 border border-slate-800 disabled:opacity-50 hover:bg-slate-800 text-slate-300"
+                className="px-3.5 py-1.5 rounded-xl bg-[#070A10] border border-slate-800 disabled:opacity-40 hover:bg-slate-800 text-slate-300 transition-colors"
               >
                 Selanjutnya
               </button>
@@ -386,18 +386,25 @@ export default function OrdersListPage() {
 
       {/* Modal: Tambah Pesanan Baru */}
       {modalOpen && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="w-full max-w-md bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-2xl space-y-4">
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="w-full max-w-md bg-[#0B0F19] border border-amber-500/30 rounded-3xl p-6 shadow-2xl space-y-4 relative">
+            <button
+              onClick={() => setModalOpen(false)}
+              className="absolute top-4 right-4 p-2 text-slate-400 hover:text-white rounded-full bg-slate-900 border border-slate-800"
+            >
+              <X className="w-4 h-4" />
+            </button>
+
             <h3 className="text-base font-bold text-white">Tambah Pesanan Baru</h3>
 
-            <form onSubmit={handleCreateOrder} className="space-y-3 text-xs">
+            <form onSubmit={handleCreateOrder} className="space-y-3.5 text-xs">
               <div>
-                <label className="block text-slate-300 font-medium mb-1">Pilih Pelanggan</label>
+                <label className="block text-slate-300 font-semibold mb-1">Pilih Pelanggan</label>
                 <select
                   required
                   value={selectedCustomerId}
                   onChange={(e) => setSelectedCustomerId(e.target.value)}
-                  className="w-full px-3 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none"
+                  className="w-full px-3.5 py-2.5 bg-[#070A10] border border-slate-800 rounded-xl text-white focus:outline-none focus:border-[#D4AF37]"
                 >
                   {customers.map((c) => (
                     <option key={c.id} value={c.id}>
@@ -408,62 +415,62 @@ export default function OrdersListPage() {
               </div>
 
               <div>
-                <label className="block text-slate-300 font-medium mb-1">Nama Paket</label>
+                <label className="block text-slate-300 font-semibold mb-1">Nama Paket</label>
                 <input
                   type="text"
                   required
                   value={packageName}
                   onChange={(e) => setPackageName(e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white"
+                  className="w-full px-3.5 py-2.5 bg-[#070A10] border border-slate-800 rounded-xl text-white focus:outline-none focus:border-[#D4AF37]"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-slate-300 font-medium mb-1">Jumlah (Pcs)</label>
+                  <label className="block text-slate-300 font-semibold mb-1">Jumlah (Pcs)</label>
                   <input
                     type="number"
                     required
                     min={1}
                     value={quantity}
                     onChange={(e) => setQuantity(Number(e.target.value))}
-                    className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white"
+                    className="w-full px-3.5 py-2.5 bg-[#070A10] border border-slate-800 rounded-xl text-white focus:outline-none focus:border-[#D4AF37]"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-slate-300 font-medium mb-1">Total Harga (Rp)</label>
+                  <label className="block text-slate-300 font-semibold mb-1">Total Harga (Rp)</label>
                   <input
                     type="number"
                     required
                     min={0}
                     value={totalPrice}
                     onChange={(e) => setTotalPrice(Number(e.target.value))}
-                    className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white"
+                    className="w-full px-3.5 py-2.5 bg-[#070A10] border border-slate-800 rounded-xl text-white focus:outline-none focus:border-[#D4AF37]"
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-slate-300 font-medium mb-1">Status Bayar</label>
+                  <label className="block text-slate-300 font-semibold mb-1">Status Pembayaran</label>
                   <select
                     value={modalPayStatus}
                     onChange={(e) => setModalPayStatus(e.target.value)}
-                    className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white"
+                    className="w-full px-3.5 py-2.5 bg-[#070A10] border border-slate-800 rounded-xl text-white focus:outline-none focus:border-[#D4AF37]"
                   >
                     <option value="belum_bayar">Belum Bayar</option>
-                    <option value="dp">DP</option>
+                    <option value="dp">DP (Uang Muka)</option>
                     <option value="lunas">Lunas</option>
                   </select>
                 </div>
 
                 <div>
-                  <label className="block text-slate-300 font-medium mb-1">Status Produksi</label>
+                  <label className="block text-slate-300 font-semibold mb-1">Status Produksi</label>
                   <select
                     value={modalProdStatus}
                     onChange={(e) => setModalProdStatus(e.target.value)}
-                    className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white"
+                    className="w-full px-3.5 py-2.5 bg-[#070A10] border border-slate-800 rounded-xl text-white focus:outline-none focus:border-[#D4AF37]"
                   >
                     <option value="menunggu">Menunggu</option>
                     <option value="dicetak">Dicetak</option>
@@ -474,28 +481,28 @@ export default function OrdersListPage() {
               </div>
 
               <div>
-                <label className="block text-slate-300 font-medium mb-1">Catatan</label>
+                <label className="block text-slate-300 font-semibold mb-1">Catatan</label>
                 <input
                   type="text"
                   placeholder="Catatan pengerjaan / resi..."
                   value={orderNote}
                   onChange={(e) => setOrderNote(e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white"
+                  className="w-full px-3.5 py-2.5 bg-[#070A10] border border-slate-800 rounded-xl text-white focus:outline-none focus:border-[#D4AF37]"
                 />
               </div>
 
-              <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-800">
+              <div className="flex items-center justify-end gap-2.5 pt-4 border-t border-slate-800">
                 <button
                   type="button"
                   onClick={() => setModalOpen(false)}
-                  className="px-4 py-2 bg-slate-800 text-slate-300 rounded-xl"
+                  className="px-4 py-2.5 bg-slate-800 text-slate-300 rounded-xl hover:bg-slate-700"
                 >
                   Batal
                 </button>
                 <button
                   type="submit"
                   disabled={submittingOrder}
-                  className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl flex items-center gap-1.5"
+                  className="px-5 py-2.5 btn-gold text-black font-extrabold rounded-xl flex items-center gap-1.5"
                 >
                   {submittingOrder ? "Menyimpan..." : "Simpan Pesanan"}
                 </button>

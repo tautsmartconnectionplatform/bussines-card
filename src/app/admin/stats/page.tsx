@@ -94,9 +94,9 @@ export default function AdminStatsPage() {
   const getDeviceIcon = (device: string) => {
     switch (device.toLowerCase()) {
       case "mobile":
-        return <Smartphone className="w-4 h-4 text-blue-400" />;
+        return <Smartphone className="w-4 h-4 text-amber-400" />;
       case "desktop":
-        return <Laptop className="w-4 h-4 text-indigo-400" />;
+        return <Laptop className="w-4 h-4 text-blue-400" />;
       case "tablet":
         return <Tablet className="w-4 h-4 text-emerald-400" />;
       default:
@@ -107,25 +107,25 @@ export default function AdminStatsPage() {
   return (
     <div className="space-y-8">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-slate-800/80">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
+          <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
             Statistik & Analitik Kunjungan
           </h1>
           <p className="text-xs sm:text-sm text-slate-400 mt-1">
-            Data performa scan QR, tombol yang sering ditekan, dan jenis perangkat pengunjung
+            Data performa scan QR, interaksi tombol yang paling diminati, dan tipe perangkat
           </p>
         </div>
 
         {/* Filter Customer Selector */}
         <div className="flex items-center gap-2">
-          <label className="text-xs font-semibold text-slate-400">Filter Bisnis:</label>
+          <label className="text-xs font-semibold text-slate-400">Filter Profil:</label>
           <select
             value={selectedCustomerId}
             onChange={(e) => setSelectedCustomerId(e.target.value)}
-            className="px-3.5 py-2 bg-slate-900 border border-slate-800 rounded-xl text-xs text-white focus:outline-none"
+            className="px-3.5 py-2.5 bg-[#070A10] border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:border-[#D4AF37]"
           >
-            <option value="">Semua Bisnis (Global)</option>
+            <option value="">Semua Profil Bisnis (Global)</option>
             {customers.map((c) => (
               <option key={c.id} value={c.id}>
                 {c.businessName}
@@ -136,49 +136,49 @@ export default function AdminStatsPage() {
       </div>
 
       {loading ? (
-        <div className="p-16 text-center text-slate-500">
-          <Loader2 className="w-8 h-8 animate-spin mx-auto mb-2 text-blue-500" />
-          <p className="text-xs">Memuat analitik...</p>
+        <div className="p-16 text-center text-slate-400">
+          <Loader2 className="w-8 h-8 animate-spin mx-auto mb-2 text-[#D4AF37]" />
+          <p className="text-xs">Memuat data analitik...</p>
         </div>
       ) : (
         <>
           {/* Summary Cards */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="p-5 rounded-2xl bg-slate-900/90 border border-slate-800 shadow-lg">
+            <div className="p-5 rounded-3xl bg-[#0B0F19]/90 border border-slate-800 shadow-xl">
               <span className="text-xs font-semibold text-slate-400 flex items-center gap-2">
-                <TrendingUp className="w-4 h-4 text-blue-400" />
+                <TrendingUp className="w-4 h-4 text-[#D4AF37]" />
                 <span>Total Scan QR (30 Hari Terakhir)</span>
               </span>
-              <span className="text-3xl font-extrabold text-white mt-2 block">
+              <span className="text-3xl font-black text-white mt-2 block">
                 {stats.totalViews} kali
               </span>
-              <p className="text-[11px] text-slate-500 mt-1">
-                Kunjungan halaman profil dari pemindaian fisik
+              <p className="text-[11px] text-slate-400 mt-1">
+                Kunjungan halaman profil dari pemindaian kartu fisik
               </p>
             </div>
 
-            <div className="p-5 rounded-2xl bg-slate-900/90 border border-slate-800 shadow-lg">
+            <div className="p-5 rounded-3xl bg-[#0B0F19]/90 border border-slate-800 shadow-xl">
               <span className="text-xs font-semibold text-slate-400 flex items-center gap-2">
                 <MousePointer className="w-4 h-4 text-emerald-400" />
                 <span>Total Klik Tombol Aksi</span>
               </span>
-              <span className="text-3xl font-extrabold text-white mt-2 block">
+              <span className="text-3xl font-black text-white mt-2 block">
                 {stats.totalClicks} interaksi
               </span>
-              <p className="text-[11px] text-slate-500 mt-1">
+              <p className="text-[11px] text-slate-400 mt-1">
                 WhatsApp, Google Maps, Instagram, vCard, dll.
               </p>
             </div>
           </div>
 
           {/* 30-Day Activity Chart */}
-          <div className="p-6 rounded-2xl bg-slate-900/90 border border-slate-800 shadow-xl">
+          <div className="p-6 rounded-3xl bg-[#0B0F19]/90 border border-slate-800 shadow-2xl">
             <h2 className="text-base font-bold text-white mb-1 flex items-center gap-2">
-              <Calendar className="w-4 h-4 text-indigo-400" />
+              <Calendar className="w-4 h-4 text-[#D4AF37]" />
               <span>Tren Kunjungan Harian (30 Hari Terakhir)</span>
             </h2>
             <p className="text-xs text-slate-400 mb-6">
-              Aktivitas scan harian untuk mengevaluasi efektivitas distribusi kartu fisik
+              Aktivitas scan harian untuk mengevaluasi efektivitas kartu fisik di lapangan
             </p>
 
             {/* Responsive Chart */}
@@ -188,16 +188,16 @@ export default function AdminStatsPage() {
                 return (
                   <div key={idx} className="flex-1 flex flex-col items-center h-full justify-end group">
                     <div className="relative w-full flex items-end justify-center h-full">
-                      <div className="absolute -top-7 opacity-0 group-hover:opacity-100 transition-opacity bg-slate-800 text-white text-[10px] px-2 py-0.5 rounded shadow pointer-events-none whitespace-nowrap z-10">
+                      <div className="absolute -top-7 opacity-0 group-hover:opacity-100 transition-opacity bg-slate-900 border border-amber-500/30 text-white text-[10px] px-2 py-0.5 rounded-lg shadow-xl pointer-events-none whitespace-nowrap z-10 font-bold">
                         {item.views} scan ({item.clicks} klik)
                       </div>
                       <div
-                        className="w-full max-w-[20px] rounded-t-lg bg-gradient-to-t from-blue-600 to-indigo-500 group-hover:from-blue-400 group-hover:to-cyan-300 transition-all duration-300"
+                        className="w-full max-w-[20px] rounded-t-lg bg-gradient-to-t from-[#8A6718] to-[#D4AF37] group-hover:brightness-125 transition-all duration-300"
                         style={{ height: `${heightPercent}%` }}
                       />
                     </div>
                     {idx % 3 === 0 && (
-                      <span className="text-[9px] text-slate-500 mt-2 truncate">
+                      <span className="text-[9px] text-slate-400 mt-2 truncate font-medium">
                         {item.label}
                       </span>
                     )}
@@ -210,10 +210,10 @@ export default function AdminStatsPage() {
           {/* Breakdown Grid: Clicks by Type & Devices */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Clicks Breakdown */}
-            <div className="p-6 rounded-2xl bg-slate-900/90 border border-slate-800 shadow-xl">
-              <h2 className="text-base font-bold text-white mb-1 flex items-center gap-2">
+            <div className="p-6 rounded-3xl bg-[#0B0F19]/90 border border-slate-800 shadow-xl">
+              <h2 className="text-sm font-bold text-white mb-1 flex items-center gap-2">
                 <MousePointer className="w-4 h-4 text-emerald-400" />
-                <span>Distribusi Klik Tombol</span>
+                <span>Distribusi Interaksi Tombol</span>
               </h2>
               <p className="text-xs text-slate-400 mb-4">
                 Tombol mana yang paling sering digunakan oleh pengunjung
@@ -221,7 +221,7 @@ export default function AdminStatsPage() {
 
               <div className="space-y-3">
                 {stats.clicksByType?.length === 0 ? (
-                  <p className="text-xs text-slate-500 py-6 text-center">Belum ada data klik.</p>
+                  <p className="text-xs text-slate-500 py-6 text-center">Belum ada data interaksi klik.</p>
                 ) : (
                   stats.clicksByType?.map((c: any) => {
                     const pct =
@@ -229,23 +229,23 @@ export default function AdminStatsPage() {
                         ? Math.round((c.count / stats.totalClicks) * 100)
                         : 0;
                     return (
-                      <div key={c.type} className="p-3 bg-slate-950/80 rounded-xl border border-slate-800/80">
+                      <div key={c.type} className="p-3 bg-[#070A10] rounded-2xl border border-slate-800/80">
                         <div className="flex items-center justify-between text-xs mb-1.5">
                           <div className="flex items-center gap-2">
-                            <div className="w-6 h-6 rounded-lg bg-slate-900 border border-slate-800 flex items-center justify-center">
+                            <div className="w-6 h-6 rounded-lg bg-[#0B0F19] border border-slate-800 flex items-center justify-center">
                               {getButtonIcon(c.type)}
                             </div>
                             <span className="font-semibold text-white capitalize">
                               {c.type}
                             </span>
                           </div>
-                          <span className="text-slate-300 font-bold">
+                          <span className="text-amber-300 font-bold">
                             {c.count} klik ({pct}%)
                           </span>
                         </div>
-                        <div className="w-full h-1.5 bg-slate-900 rounded-full overflow-hidden">
+                        <div className="w-full h-1.5 bg-[#0B0F19] rounded-full overflow-hidden">
                           <div
-                            className="h-full bg-emerald-500 rounded-full"
+                            className="h-full bg-gradient-to-r from-[#D4AF37] to-emerald-400 rounded-full"
                             style={{ width: `${pct}%` }}
                           />
                         </div>
@@ -257,13 +257,13 @@ export default function AdminStatsPage() {
             </div>
 
             {/* Devices Breakdown */}
-            <div className="p-6 rounded-2xl bg-slate-900/90 border border-slate-800 shadow-xl">
-              <h2 className="text-base font-bold text-white mb-1 flex items-center gap-2">
-                <Smartphone className="w-4 h-4 text-blue-400" />
+            <div className="p-6 rounded-3xl bg-[#0B0F19]/90 border border-slate-800 shadow-xl">
+              <h2 className="text-sm font-bold text-white mb-1 flex items-center gap-2">
+                <Smartphone className="w-4 h-4 text-[#D4AF37]" />
                 <span>Tipe Perangkat Pengunjung</span>
               </h2>
               <p className="text-xs text-slate-400 mb-4">
-                Mayoritas pengunjung membuka lewat smartphone (mobile)
+                Mayoritas pengunjung membuka lewat smartphone (mobile-first)
               </p>
 
               <div className="space-y-3">
@@ -276,10 +276,10 @@ export default function AdminStatsPage() {
                         ? Math.round((d.count / stats.totalViews) * 100)
                         : 0;
                     return (
-                      <div key={d.device} className="p-3 bg-slate-950/80 rounded-xl border border-slate-800/80">
+                      <div key={d.device} className="p-3 bg-[#070A10] rounded-2xl border border-slate-800/80">
                         <div className="flex items-center justify-between text-xs mb-1.5">
                           <div className="flex items-center gap-2">
-                            <div className="w-6 h-6 rounded-lg bg-slate-900 border border-slate-800 flex items-center justify-center">
+                            <div className="w-6 h-6 rounded-lg bg-[#0B0F19] border border-slate-800 flex items-center justify-center">
                               {getDeviceIcon(d.device)}
                             </div>
                             <span className="font-semibold text-white capitalize">
@@ -290,9 +290,9 @@ export default function AdminStatsPage() {
                             {d.count} scan ({pct}%)
                           </span>
                         </div>
-                        <div className="w-full h-1.5 bg-slate-900 rounded-full overflow-hidden">
+                        <div className="w-full h-1.5 bg-[#0B0F19] rounded-full overflow-hidden">
                           <div
-                            className="h-full bg-blue-500 rounded-full"
+                            className="h-full bg-[#D4AF37] rounded-full"
                             style={{ width: `${pct}%` }}
                           />
                         </div>

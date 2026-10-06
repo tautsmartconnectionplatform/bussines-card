@@ -47,6 +47,8 @@ async function main() {
       city: "Jakarta Selatan",
       website: "https://kopinusantara.id",
       linkedinUrl: "https://linkedin.com/in/budisantoso-kopi",
+      deletedAt: null,
+      isActive: true,
     },
     create: {
       slug: "kopi-nusantara",
@@ -66,7 +68,7 @@ async function main() {
       instagramUsername: "kopinusantara.roastery",
       tiktokUsername: "kopinusantara.official",
       linkedinUrl: "https://linkedin.com/in/budisantoso-kopi",
-      accentColor: "#D97706", // Amber 600
+      accentColor: "#D4AF37",
       isActive: true,
       internalNote: "Pelanggan VIP, order 200 kartu NFC dan cetak QR.",
     },
@@ -80,6 +82,8 @@ async function main() {
       phone: "6281987654321",
       city: "Sukabumi",
       website: "https://senyumsehatdental.com",
+      deletedAt: null,
+      isActive: true,
     },
     create: {
       slug: "senyum-sehat-dental",
@@ -98,7 +102,7 @@ async function main() {
       facebookUrl: "https://facebook.com/senyumsehatdental",
       instagramUsername: "senyumsehat.dental",
       tiktokUsername: "drg.amandaputri",
-      accentColor: "#059669", // Emerald 600
+      accentColor: "#059669",
       isActive: true,
       internalNote: "Klinik gigi spesialis, mau repeat order bulan depan.",
     },
@@ -112,6 +116,8 @@ async function main() {
       phone: "6285711223344",
       city: "Tangerang Selatan",
       website: "https://autojayamotor.com",
+      deletedAt: null,
+      isActive: true,
     },
     create: {
       slug: "autojaya-motor",
@@ -130,7 +136,7 @@ async function main() {
       facebookUrl: "https://facebook.com/autojayamotor",
       instagramUsername: "autojaya.service",
       tiktokUsername: "autojaya_mechanic",
-      accentColor: "#DC2626", // Red 600
+      accentColor: "#DC2626",
       isActive: true,
       internalNote: "Order paket hemat 50 pcs.",
     },
@@ -138,7 +144,10 @@ async function main() {
 
   const customer4 = await prisma.customer.upsert({
     where: { slug: "dapur-bunda-ina" },
-    update: {},
+    update: {
+      deletedAt: null,
+      isActive: false,
+    },
     create: {
       slug: "dapur-bunda-ina",
       businessName: "Katering & Kue Dapur Bunda Ina",
@@ -151,8 +160,8 @@ async function main() {
       facebookUrl: "https://facebook.com/dapurbundaina",
       instagramUsername: "dapurbundaina",
       tiktokUsername: "bundainamasak",
-      accentColor: "#EA580C", // Orange 600
-      isActive: false, // Contoh non-aktif
+      accentColor: "#EA580C",
+      isActive: false,
       internalNote: "Sedang jeda operasional sementara.",
     },
   });

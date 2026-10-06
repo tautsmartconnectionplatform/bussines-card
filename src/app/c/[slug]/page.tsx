@@ -63,17 +63,17 @@ export default async function PublicCustomerPage({ params }: PageProps) {
   // Jika profil dinonaktifkan oleh admin
   if (!customer.isActive) {
     return (
-      <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center p-6 text-center text-slate-100 selection:bg-rose-500 selection:text-white">
-        <div className="max-w-md w-full bg-slate-900 border border-slate-800 rounded-3xl p-8 backdrop-blur-xl shadow-2xl">
-          <div className="w-16 h-16 rounded-full bg-amber-500/20 text-amber-400 flex items-center justify-center mx-auto mb-4 text-2xl font-bold">
+      <div className="min-h-screen bg-[#070A10] flex flex-col items-center justify-center p-6 text-center text-slate-100 selection:bg-[#D4AF37] selection:text-black">
+        <div className="max-w-md w-full bg-[#0B0F19] border border-amber-500/20 rounded-3xl p-8 backdrop-blur-xl shadow-2xl relative overflow-hidden">
+          <div className="w-14 h-14 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-[#D4AF37] flex items-center justify-center mx-auto mb-4 text-2xl font-bold">
             ⚠️
           </div>
-          <h1 className="text-2xl font-bold text-white mb-2">Profil Tidak Aktif</h1>
-          <p className="text-sm text-slate-400 leading-relaxed mb-6">
-            Halaman profil bisnis ini saat ini sedang tidak aktif atau dinonaktifkan oleh pemilik sistem.
+          <h1 className="text-2xl font-bold text-white mb-2">Profil Sementara Tidak Aktif</h1>
+          <p className="text-xs sm:text-sm text-slate-400 leading-relaxed mb-6">
+            Halaman profil bisnis ini saat ini sedang ditangguhkan atau dinonaktifkan oleh pemilik sistem.
           </p>
-          <div className="p-4 bg-slate-950/80 rounded-xl border border-slate-800 text-xs text-slate-500">
-            Jika ini adalah bisnis Anda, silakan hubungi penyedia layanan kartu bisnis Anda untuk mengaktifkan kembali.
+          <div className="p-4 bg-[#070A10] rounded-2xl border border-slate-800/80 text-xs text-slate-400">
+            Jika ini adalah profil bisnis Anda, silakan hubungi penyedia layanan kartu bisnis untuk mengaktifkan kembali.
           </div>
         </div>
       </div>

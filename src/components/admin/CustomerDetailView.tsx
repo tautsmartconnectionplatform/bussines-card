@@ -19,6 +19,8 @@ import {
   AlertTriangle,
   Loader2,
   Layers,
+  Sparkles,
+  X,
 } from "lucide-react";
 import {
   WhatsAppIcon,
@@ -39,8 +41,8 @@ export default function CustomerDetailView({ customer, baseUrl }: CustomerDetail
   const router = useRouter();
 
   // QR Customizer States
-  const [colorDark, setColorDark] = useState("#000000");
-  const [colorLight, setColorLight] = useState("#ffffff");
+  const [colorDark, setColorDark] = useState("#070A10");
+  const [colorLight, setColorLight] = useState("#FFFFFF");
   const [margin, setMargin] = useState(2);
   const [qrDataUrl, setQrDataUrl] = useState<string>("");
   const [loadingQR, setLoadingQR] = useState(true);
@@ -66,8 +68,8 @@ export default function CustomerDetailView({ customer, baseUrl }: CustomerDetail
       margin: Number(margin),
       errorCorrectionLevel: "H",
       color: {
-        dark: colorDark || "#000000",
-        light: colorLight || "#ffffff",
+        dark: colorDark || "#070A10",
+        light: colorLight || "#FFFFFF",
       },
     })
       .then((url) => {
@@ -120,21 +122,21 @@ export default function CustomerDetailView({ customer, baseUrl }: CustomerDetail
   return (
     <div className="space-y-6">
       {/* Top Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-800">
-        <div className="flex items-center gap-3">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-800/80">
+        <div className="flex items-center gap-3.5">
           <Link
             href="/admin/customers"
-            className="p-2 rounded-xl bg-slate-900 border border-slate-800 hover:bg-slate-800 text-slate-400 hover:text-white transition-colors"
+            className="p-2.5 rounded-2xl bg-[#0B0F19] border border-slate-800 hover:bg-slate-800 text-slate-400 hover:text-white transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
           </Link>
           <div>
-            <div className="flex items-center gap-2">
-              <h1 className="text-xl sm:text-2xl font-bold text-white">
+            <div className="flex items-center gap-2.5">
+              <h1 className="text-xl sm:text-2xl font-black text-white">
                 {customer.businessName}
               </h1>
               <span
-                className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
+                className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full ${
                   customer.isActive
                     ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
                     : "bg-rose-500/10 text-rose-400 border border-rose-500/20"
@@ -144,27 +146,27 @@ export default function CustomerDetailView({ customer, baseUrl }: CustomerDetail
               </span>
             </div>
             <p className="text-xs text-slate-400 mt-0.5">
-              Pemilik: <span className="text-slate-200">{customer.ownerName}</span> • Dibuat:{" "}
+              Pemilik: <span className="text-slate-200 font-semibold">{customer.ownerName}</span> • Dibuat:{" "}
               {new Date(customer.createdAt).toLocaleDateString("id-ID")}
             </p>
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2.5">
           <Link
             href={`/c/${customer.slug}`}
             target="_blank"
-            className="px-3.5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 text-xs font-semibold text-slate-200 hover:text-white flex items-center gap-1.5 transition-colors"
+            className="px-4 py-2.5 rounded-xl bg-[#0B0F19] hover:bg-[#162033] border border-slate-800 text-xs font-semibold text-slate-200 hover:text-[#D4AF37] flex items-center gap-2 transition-colors"
           >
             <span>Buka Profil Publik</span>
-            <ExternalLink className="w-3.5 h-3.5 text-blue-400" />
+            <ExternalLink className="w-3.5 h-3.5 text-[#D4AF37]" />
           </Link>
           <Link
             href={`/admin/customers/${customer.id}/edit`}
-            className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-xs font-bold text-white shadow-lg shadow-blue-600/30 flex items-center gap-1.5 transition-all active:scale-95"
+            className="px-4 py-2.5 rounded-xl btn-gold text-xs font-extrabold text-black shadow-md shadow-amber-500/15 flex items-center gap-2 transition-all active:scale-95"
           >
             <Edit className="w-3.5 h-3.5" />
-            <span>Edit Profil</span>
+            <span>Edit Data</span>
           </Link>
         </div>
       </div>
@@ -173,19 +175,19 @@ export default function CustomerDetailView({ customer, baseUrl }: CustomerDetail
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
         {/* QR Code Generator & Print Tool: 5 cols */}
         <div className="lg:col-span-5 space-y-6">
-          <div className="p-6 rounded-2xl bg-slate-900/90 border border-slate-800 shadow-xl space-y-5">
+          <div className="p-6 rounded-3xl bg-[#0B0F19]/90 border border-slate-800/90 shadow-2xl space-y-5">
             <div className="flex items-center justify-between">
               <h2 className="text-sm font-bold text-white flex items-center gap-2">
-                <QrCode className="w-4 h-4 text-blue-400" />
+                <QrCode className="w-4 h-4 text-[#D4AF37]" />
                 <span>QR Code Siap Cetak</span>
               </h2>
-              <span className="text-[10px] font-mono text-slate-400 bg-slate-950 px-2 py-1 rounded-md border border-slate-800">
+              <span className="text-[10px] font-mono text-amber-300 bg-amber-500/10 px-2.5 py-1 rounded-lg border border-amber-500/20">
                 /c/{customer.slug}
               </span>
             </div>
 
             {/* QR Preview Box */}
-            <div className="p-6 bg-white rounded-2xl flex items-center justify-center shadow-inner relative min-h-[260px]">
+            <div className="p-6 bg-white rounded-2xl flex items-center justify-center shadow-inner relative min-h-[260px] border-4 border-[#162033]">
               {loadingQR ? (
                 <Loader2 className="w-8 h-8 animate-spin text-slate-800" />
               ) : qrDataUrl ? (
@@ -198,14 +200,14 @@ export default function CustomerDetailView({ customer, baseUrl }: CustomerDetail
             </div>
 
             {/* Target URL notice */}
-            <div className="p-3 bg-slate-950/80 rounded-xl border border-slate-800 text-[11px] text-slate-400 break-all">
-              <span className="text-slate-500 block mb-0.5 font-semibold">Tujuan Scan:</span>
-              <code className="text-blue-400 font-mono">{profileUrl}</code>
+            <div className="p-3.5 bg-[#070A10] rounded-2xl border border-slate-800/80 text-[11px] text-slate-400 break-all">
+              <span className="text-slate-500 block mb-0.5 font-semibold">Tautan Target Scan:</span>
+              <code className="text-amber-300 font-mono">{profileUrl}</code>
             </div>
 
             {/* Customizer Options */}
             <div className="space-y-3 pt-2 border-t border-slate-800 text-xs">
-              <span className="font-semibold text-slate-300 block">Kustomisasi QR:</span>
+              <span className="font-semibold text-slate-300 block">Kustomisasi Ekspor QR:</span>
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="text-[11px] text-slate-400 block mb-1">Warna Kode (Dark)</label>
@@ -220,7 +222,7 @@ export default function CustomerDetailView({ customer, baseUrl }: CustomerDetail
                       type="text"
                       value={colorDark}
                       onChange={(e) => setColorDark(e.target.value)}
-                      className="w-full px-2 py-1 bg-slate-950 border border-slate-800 rounded-lg text-xs font-mono text-white"
+                      className="w-full px-2 py-1 bg-[#070A10] border border-slate-800 rounded-lg text-xs font-mono text-white"
                     />
                   </div>
                 </div>
@@ -238,7 +240,7 @@ export default function CustomerDetailView({ customer, baseUrl }: CustomerDetail
                       type="text"
                       value={colorLight}
                       onChange={(e) => setColorLight(e.target.value)}
-                      className="w-full px-2 py-1 bg-slate-950 border border-slate-800 rounded-lg text-xs font-mono text-white"
+                      className="w-full px-2 py-1 bg-[#070A10] border border-slate-800 rounded-lg text-xs font-mono text-white"
                     />
                   </div>
                 </div>
@@ -246,7 +248,7 @@ export default function CustomerDetailView({ customer, baseUrl }: CustomerDetail
 
               <div>
                 <div className="flex justify-between text-[11px] text-slate-400 mb-1">
-                  <span>Quiet Zone (Margin):</span>
+                  <span>Margin Border:</span>
                   <span>{margin} modul</span>
                 </div>
                 <input
@@ -255,7 +257,7 @@ export default function CustomerDetailView({ customer, baseUrl }: CustomerDetail
                   max={6}
                   value={margin}
                   onChange={(e) => setMargin(Number(e.target.value))}
-                  className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-blue-500"
+                  className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-amber-500"
                 />
               </div>
             </div>
@@ -266,9 +268,9 @@ export default function CustomerDetailView({ customer, baseUrl }: CustomerDetail
                 href={`/api/admin/customers/${customer.id}/qr?format=png&colorDark=${encodeURIComponent(
                   colorDark
                 )}&colorLight=${encodeURIComponent(colorLight)}&margin=${margin}`}
-                className="py-3 px-4 bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs rounded-xl shadow-lg shadow-blue-600/30 flex items-center justify-center gap-2 transition-all active:scale-95 text-center"
+                className="py-3 px-4 btn-gold text-black font-extrabold text-xs rounded-xl shadow-md flex items-center justify-center gap-2 transition-all active:scale-95 text-center"
               >
-                <Download className="w-4 h-4" />
+                <Download className="w-4 h-4 text-black" />
                 <span>Unduh PNG (HD)</span>
               </a>
 
@@ -276,15 +278,15 @@ export default function CustomerDetailView({ customer, baseUrl }: CustomerDetail
                 href={`/api/admin/customers/${customer.id}/qr?format=svg&colorDark=${encodeURIComponent(
                   colorDark
                 )}&colorLight=${encodeURIComponent(colorLight)}&margin=${margin}`}
-                className="py-3 px-4 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 hover:text-white font-bold text-xs rounded-xl flex items-center justify-center gap-2 transition-all active:scale-95 text-center"
+                className="py-3 px-4 bg-[#101726] hover:bg-[#162033] border border-slate-700 text-slate-200 hover:text-white font-bold text-xs rounded-xl flex items-center justify-center gap-2 transition-all active:scale-95 text-center"
               >
-                <Download className="w-4 h-4" />
+                <Download className="w-4 h-4 text-[#D4AF37]" />
                 <span>Unduh Vector (SVG)</span>
               </a>
             </div>
 
             <p className="text-[10px] text-slate-500 text-center">
-              PNG beresolusi tinggi 1200x1200px siap cetak atau gunakan SVG untuk vektor tak terbatas.
+              PNG beresolusi 1200x1200px siap cetak atau gunakan SVG untuk vektor presisi tanpa batas pecah.
             </p>
           </div>
         </div>
@@ -293,43 +295,43 @@ export default function CustomerDetailView({ customer, baseUrl }: CustomerDetail
         <div className="lg:col-span-7 space-y-6">
           {/* Stats Bar */}
           <div className="grid grid-cols-2 gap-4">
-            <div className="p-4 rounded-2xl bg-slate-900/90 border border-slate-800 shadow-md">
+            <div className="p-5 rounded-3xl bg-[#0B0F19]/90 border border-slate-800 shadow-xl">
               <span className="text-[11px] font-semibold text-slate-400 flex items-center gap-1.5">
-                <Eye className="w-3.5 h-3.5 text-blue-400" />
+                <Eye className="w-3.5 h-3.5 text-[#D4AF37]" />
                 <span>Total Scan Profil</span>
               </span>
-              <span className="text-2xl font-bold text-white mt-1 block">
+              <span className="text-2xl font-black text-white mt-1 block">
                 {customer._count?.pageViews || 0} kali
               </span>
             </div>
 
-            <div className="p-4 rounded-2xl bg-slate-900/90 border border-slate-800 shadow-md">
+            <div className="p-5 rounded-3xl bg-[#0B0F19]/90 border border-slate-800 shadow-xl">
               <span className="text-[11px] font-semibold text-slate-400 flex items-center gap-1.5">
                 <MousePointer className="w-3.5 h-3.5 text-emerald-400" />
-                <span>Total Interaksi Tombol</span>
+                <span>Total Klik Tombol</span>
               </span>
-              <span className="text-2xl font-bold text-white mt-1 block">
+              <span className="text-2xl font-black text-white mt-1 block">
                 {customer._count?.linkClicks || 0} klik
               </span>
             </div>
           </div>
 
           {/* Business Info Details */}
-          <div className="p-6 rounded-2xl bg-slate-900/90 border border-slate-800 shadow-xl space-y-4">
-            <h2 className="text-sm font-bold text-white uppercase tracking-wider">
-              Informasi Lengkap Profil
+          <div className="p-6 rounded-3xl bg-[#0B0F19]/90 border border-slate-800 shadow-xl space-y-4">
+            <h2 className="text-xs font-bold text-slate-300 uppercase tracking-wider pb-2 border-b border-slate-800/80">
+              Informasi Lengkap Profil Bisnis
             </h2>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
               <div>
                 <span className="text-slate-500 block mb-0.5">Nama Pemilik</span>
-                <span className="font-semibold text-white">{customer.ownerName}</span>
+                <span className="font-bold text-white">{customer.ownerName}</span>
               </div>
 
               {customer.jobTitle && (
                 <div>
-                  <span className="text-slate-500 block mb-0.5">Jabatan / Pekerjaan</span>
-                  <span className="font-semibold text-blue-400">{customer.jobTitle}</span>
+                  <span className="text-slate-500 block mb-0.5">Jabatan / Profesi</span>
+                  <span className="font-semibold text-amber-300">{customer.jobTitle}</span>
                 </div>
               )}
 
@@ -340,7 +342,7 @@ export default function CustomerDetailView({ customer, baseUrl }: CustomerDetail
 
               {customer.phone && (
                 <div>
-                  <span className="text-slate-500 block mb-0.5">Nomor Telpon Seluler</span>
+                  <span className="text-slate-500 block mb-0.5">Nomor Telepon Seluler</span>
                   <span className="font-semibold text-white">+{customer.phone}</span>
                 </div>
               )}
@@ -361,12 +363,12 @@ export default function CustomerDetailView({ customer, baseUrl }: CustomerDetail
 
               {customer.website && (
                 <div className="sm:col-span-2">
-                  <span className="text-slate-500 block mb-0.5">Website Resmi</span>
+                  <span className="text-slate-500 block mb-0.5">Situs Web Resmi</span>
                   <a
                     href={customer.website}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="font-semibold text-blue-400 hover:underline"
+                    className="font-semibold text-[#D4AF37] hover:underline"
                   >
                     {customer.website}
                   </a>
@@ -374,7 +376,7 @@ export default function CustomerDetailView({ customer, baseUrl }: CustomerDetail
               )}
 
               <div>
-                <span className="text-slate-500 block mb-0.5">Warna Aksen</span>
+                <span className="text-slate-500 block mb-0.5">Warna Aksen Profil</span>
                 <div className="flex items-center gap-2">
                   <div
                     className="w-4 h-4 rounded-full border border-white/20"
@@ -385,7 +387,7 @@ export default function CustomerDetailView({ customer, baseUrl }: CustomerDetail
               </div>
 
               <div className="sm:col-span-2">
-                <span className="text-slate-500 block mb-0.5">Alamat</span>
+                <span className="text-slate-500 block mb-0.5">Alamat Lengkap</span>
                 <span className="text-slate-200">{customer.address}</span>
               </div>
 
@@ -461,8 +463,8 @@ export default function CustomerDetailView({ customer, baseUrl }: CustomerDetail
               )}
 
               {customer.internalNote && (
-                <div className="sm:col-span-2 p-3 bg-slate-950 rounded-xl border border-slate-800 text-slate-300 text-[11px]">
-                  <span className="font-bold text-amber-400 block mb-1">Catatan Internal:</span>
+                <div className="sm:col-span-2 p-3.5 bg-[#070A10] rounded-2xl border border-slate-800 text-slate-300 text-[11px]">
+                  <span className="font-bold text-amber-400 block mb-1">Catatan Internal Admin:</span>
                   {customer.internalNote}
                 </div>
               )}
@@ -470,25 +472,25 @@ export default function CustomerDetailView({ customer, baseUrl }: CustomerDetail
           </div>
 
           {/* Orders History for this Customer */}
-          <div className="p-6 rounded-2xl bg-slate-900/90 border border-slate-800 shadow-xl space-y-4">
-            <div className="flex items-center justify-between">
+          <div className="p-6 rounded-3xl bg-[#0B0F19]/90 border border-slate-800 shadow-xl space-y-4">
+            <div className="flex items-center justify-between pb-2 border-b border-slate-800/80">
               <h2 className="text-sm font-bold text-white flex items-center gap-2">
                 <ShoppingBag className="w-4 h-4 text-emerald-400" />
                 <span>Riwayat Pesanan Kartu Fisik</span>
               </h2>
               <button
                 onClick={() => setOrderModalOpen(true)}
-                className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold flex items-center gap-1.5 transition-all shadow-md active:scale-95"
+                className="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold flex items-center gap-1.5 transition-all shadow-md active:scale-95"
               >
                 <PlusCircle className="w-3.5 h-3.5" />
                 <span>Tambah Pesanan</span>
               </button>
             </div>
 
-            <div className="divide-y divide-slate-800/80">
+            <div className="divide-y divide-slate-800/60">
               {customer.orders?.length === 0 ? (
                 <p className="text-xs text-slate-500 py-6 text-center">
-                  Belum ada riwayat pesanan kartu untuk pelanggan ini.
+                  Belum ada riwayat pesanan cetak kartu untuk pelanggan ini.
                 </p>
               ) : (
                 customer.orders?.map((order: any) => (
@@ -500,7 +502,7 @@ export default function CustomerDetailView({ customer, baseUrl }: CustomerDetail
                       <div className="flex items-center gap-2 text-[11px] text-slate-400 mt-0.5">
                         <span>{order.quantity} pcs</span>
                         <span>•</span>
-                        <span className="text-slate-200 font-semibold">{formatRupiah(order.totalPrice)}</span>
+                        <span className="text-amber-300 font-semibold">{formatRupiah(order.totalPrice)}</span>
                         <span>•</span>
                         <span>{new Date(order.orderDate).toLocaleDateString("id-ID")}</span>
                       </div>
@@ -510,7 +512,7 @@ export default function CustomerDetailView({ customer, baseUrl }: CustomerDetail
                     </div>
                     <div className="flex flex-col items-end gap-1">
                       <span
-                        className={`text-[10px] font-semibold px-2 py-0.5 rounded-full capitalize ${
+                        className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full capitalize ${
                           order.paymentStatus === "lunas"
                             ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
                             : order.paymentStatus === "dp"
@@ -534,71 +536,78 @@ export default function CustomerDetailView({ customer, baseUrl }: CustomerDetail
 
       {/* Modal: Tambah Pesanan Baru */}
       {orderModalOpen && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="w-full max-w-md bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-2xl space-y-4">
-            <h3 className="text-base font-bold text-white">Tambah Pesanan Kartu Baru</h3>
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="w-full max-w-md bg-[#0B0F19] border border-amber-500/30 rounded-3xl p-6 shadow-2xl space-y-4 relative">
+            <button
+              onClick={() => setOrderModalOpen(false)}
+              className="absolute top-4 right-4 p-2 text-slate-400 hover:text-white rounded-full bg-slate-900 border border-slate-800"
+            >
+              <X className="w-4 h-4" />
+            </button>
+
+            <h3 className="text-base font-bold text-white">Tambah Pesanan Cetak Kartu</h3>
             <p className="text-xs text-slate-400">
-              Pelanggan: <span className="text-white font-semibold">{customer.businessName}</span>
+              Pelanggan: <span className="text-white font-bold">{customer.businessName}</span>
             </p>
 
-            <form onSubmit={handleCreateOrder} className="space-y-3 text-xs">
+            <form onSubmit={handleCreateOrder} className="space-y-3.5 text-xs">
               <div>
-                <label className="block text-slate-300 font-medium mb-1">Nama Paket</label>
+                <label className="block text-slate-300 font-semibold mb-1">Nama Paket</label>
                 <input
                   type="text"
                   required
                   value={packageName}
                   onChange={(e) => setPackageName(e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white"
+                  className="w-full px-3.5 py-2.5 bg-[#070A10] border border-slate-800 rounded-xl text-white focus:outline-none focus:border-[#D4AF37]"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-slate-300 font-medium mb-1">Jumlah (Pcs)</label>
+                  <label className="block text-slate-300 font-semibold mb-1">Jumlah (Pcs)</label>
                   <input
                     type="number"
                     required
                     min={1}
                     value={orderQuantity}
                     onChange={(e) => setOrderQuantity(Number(e.target.value))}
-                    className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white"
+                    className="w-full px-3.5 py-2.5 bg-[#070A10] border border-slate-800 rounded-xl text-white focus:outline-none focus:border-[#D4AF37]"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-slate-300 font-medium mb-1">Total Harga (Rp)</label>
+                  <label className="block text-slate-300 font-semibold mb-1">Total Harga (Rp)</label>
                   <input
                     type="number"
                     required
                     min={0}
                     value={totalPrice}
                     onChange={(e) => setTotalPrice(Number(e.target.value))}
-                    className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white"
+                    className="w-full px-3.5 py-2.5 bg-[#070A10] border border-slate-800 rounded-xl text-white focus:outline-none focus:border-[#D4AF37]"
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-slate-300 font-medium mb-1">Status Bayar</label>
+                  <label className="block text-slate-300 font-semibold mb-1">Status Pembayaran</label>
                   <select
                     value={paymentStatus}
                     onChange={(e) => setPaymentStatus(e.target.value)}
-                    className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white"
+                    className="w-full px-3.5 py-2.5 bg-[#070A10] border border-slate-800 rounded-xl text-white focus:outline-none focus:border-[#D4AF37]"
                   >
                     <option value="belum_bayar">Belum Bayar</option>
-                    <option value="dp">DP</option>
+                    <option value="dp">DP (Uang Muka)</option>
                     <option value="lunas">Lunas</option>
                   </select>
                 </div>
 
                 <div>
-                  <label className="block text-slate-300 font-medium mb-1">Status Produksi</label>
+                  <label className="block text-slate-300 font-semibold mb-1">Status Produksi</label>
                   <select
                     value={productionStatus}
                     onChange={(e) => setProductionStatus(e.target.value)}
-                    className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white"
+                    className="w-full px-3.5 py-2.5 bg-[#070A10] border border-slate-800 rounded-xl text-white focus:outline-none focus:border-[#D4AF37]"
                   >
                     <option value="menunggu">Menunggu</option>
                     <option value="dicetak">Dicetak</option>
@@ -609,28 +618,28 @@ export default function CustomerDetailView({ customer, baseUrl }: CustomerDetail
               </div>
 
               <div>
-                <label className="block text-slate-300 font-medium mb-1">Catatan</label>
+                <label className="block text-slate-300 font-semibold mb-1">Catatan Pesanan</label>
                 <input
                   type="text"
-                  placeholder="Contoh: Cetak finishing doff, resi kirim..."
+                  placeholder="Contoh: Finishing doff, laminasi ganda..."
                   value={orderNote}
                   onChange={(e) => setOrderNote(e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white"
+                  className="w-full px-3.5 py-2.5 bg-[#070A10] border border-slate-800 rounded-xl text-white focus:outline-none focus:border-[#D4AF37]"
                 />
               </div>
 
-              <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-800">
+              <div className="flex items-center justify-end gap-2.5 pt-4 border-t border-slate-800">
                 <button
                   type="button"
                   onClick={() => setOrderModalOpen(false)}
-                  className="px-4 py-2 bg-slate-800 text-slate-300 rounded-xl"
+                  className="px-4 py-2.5 bg-slate-800 text-slate-300 rounded-xl hover:bg-slate-700"
                 >
                   Batal
                 </button>
                 <button
                   type="submit"
                   disabled={creatingOrder}
-                  className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl flex items-center gap-1.5"
+                  className="px-5 py-2.5 btn-gold text-black font-extrabold rounded-xl flex items-center gap-1.5"
                 >
                   {creatingOrder ? "Menyimpan..." : "Simpan Pesanan"}
                 </button>
