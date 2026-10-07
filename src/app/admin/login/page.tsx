@@ -6,8 +6,8 @@ import { Lock, Mail, ArrowRight, ShieldCheck, AlertCircle, Loader2, QrCode } fro
 
 export default function AdminLoginPage() {
   const router = useRouter();
-  const [email, setEmail] = useState("admin@kartubisnis.com");
-  const [password, setPassword] = useState("adminpassword123");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -78,7 +78,7 @@ export default function AdminLoginPage() {
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="admin@kartubisnis.com"
+                placeholder="nama@email.com"
                 className="w-full pl-10 pr-4 py-3 bg-[#070A10] border border-slate-800 rounded-xl text-sm text-white placeholder-slate-600 focus:outline-none focus:border-[#D4AF37] transition-colors"
               />
             </div>
@@ -119,17 +119,6 @@ export default function AdminLoginPage() {
             )}
           </button>
         </form>
-
-        <div className="mt-8 p-4 bg-[#070A10] rounded-2xl border border-slate-800/80 text-[11px] text-slate-400 flex items-start gap-2.5">
-          <ShieldCheck className="w-4 h-4 text-[#D4AF37] shrink-0 mt-0.5" />
-          <div className="leading-relaxed">
-            <span className="font-bold text-slate-300">Kredensial Akses Demo:</span>
-            <br />
-            Email: <code className="text-amber-300 font-mono">admin@kartubisnis.com</code>
-            <br />
-            Password: <code className="text-amber-300 font-mono">adminpassword123</code>
-          </div>
-        </div>
       </div>
     </div>
   );

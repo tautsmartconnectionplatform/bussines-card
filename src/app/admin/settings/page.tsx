@@ -76,6 +76,7 @@ export default function AdminSettingsPage() {
           seller_name: sellerName,
           footer_text: footerText,
           base_domain: baseDomain,
+          adminEmail: adminEmail,
           currentPassword: currentPassword || undefined,
           newPassword: newPassword || undefined,
         }),
@@ -197,12 +198,25 @@ export default function AdminSettingsPage() {
           <div className="p-6 rounded-3xl bg-[#0B0F19]/90 border border-slate-800 shadow-xl space-y-4">
             <h2 className="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-2 pb-2 border-b border-slate-800/80">
               <Lock className="w-4 h-4 text-emerald-400" />
-              <span>Ganti Kata Sandi Admin</span>
+              <span>Kredensial & Keamanan Akun Admin</span>
             </h2>
 
             <div className="space-y-3.5 text-xs">
-              <div className="p-3.5 bg-[#070A10] rounded-2xl border border-slate-800 text-slate-400">
-                Email admin aktif: <span className="text-white font-bold">{adminEmail}</span>
+              <div>
+                <label className="block text-slate-300 font-semibold mb-1">
+                  Email Akun Administrator
+                </label>
+                <input
+                  type="email"
+                  required
+                  value={adminEmail}
+                  onChange={(e) => setAdminEmail(e.target.value)}
+                  placeholder="admin@domain.com"
+                  className="w-full px-3.5 py-2.5 bg-[#070A10] border border-slate-800 rounded-xl text-white focus:outline-none focus:border-[#D4AF37]"
+                />
+                <p className="text-[10px] text-slate-400 mt-1">
+                  Jika mengubah email atau sandi, wajib memasukkan Kata Sandi Saat Ini di bawah.
+                </p>
               </div>
 
               <div>

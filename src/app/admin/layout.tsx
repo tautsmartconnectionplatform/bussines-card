@@ -12,7 +12,7 @@ export default async function AdminLayout({
   return (
     <div className="min-h-screen bg-[#070A10] text-slate-100 flex flex-col md:flex-row selection:bg-[#D4AF37] selection:text-black">
       {/* Sidebar Component */}
-      <AdminSidebar adminEmail={admin?.email || "admin@kartubisnis.com"} />
+      <AdminSidebar adminEmail={admin?.email || "admin_tautsmart@gmail.com"} />
 
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">

@@ -74,18 +74,39 @@ export async function getCurrentAdmin(): Promise<AdminPayload | null> {
   const payload = await verifySessionToken(token);
   if (!payload) return null;
 
-  // Verifikasi apakah admin masih ada di DB
-  const admin = await prisma.admin.findUnique({
-    where: { id: payload.adminId },
-    select: { id: true, email: true },
-  });
+  // Verifikasi apakah admin masih ada di DB dengan retry jika Neon sedang cold-start/bangun
+  try {
+    let admin = null;
+    let attempts = 0;
+    while (attempts < 2) {
+      try {
+        admin = await prisma.admin.findUnique({
+          where: { id: payload.adminId },
+          select: { id: true, email: true },
+        });
+        break;
+      } catch (dbErr) {
+        attempts++;
+        if (attempts >= 2) throw dbErr;
+        // Tunggu 500ms untuk Neon compute wake-up
+        await new Promise((r) => setTimeout(r, 500));
+      }
+    }
 
-  if (!admin) return null;
+    if (!admin) return null;
 
-  return {
-    adminId: admin.id,
-    email: admin.email,
-  };
+    return {
+      adminId: admin.id,
+      email: admin.email,
+    };
+  } catch (error) {
+    console.warn("DB connection warning in getCurrentAdmin, using verified session payload:", error);
+    // Jika koneksi DB sesaat bermasalah tetapi JWT session token valid, fallback ke payload sesi
+    return {
+      adminId: payload.adminId,
+      email: payload.email,
+    };
+  }
 }
 
 // In-memory rate limiting map for login protection

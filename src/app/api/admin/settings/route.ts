@@ -62,15 +62,8 @@ export async function PUT(request: Request) {
       });
     }
 
-    // Ganti Password Admin jika diisi
-    if (newPassword) {
-      if (!currentPassword) {
-        return NextResponse.json(
-          { error: "Password saat ini wajib diisi untuk mengganti password." },
-          { status: 400 }
-        );
-      }
-
+    // Ganti Email atau Password Admin jika diisi
+    if (newPassword || (body.adminEmail && body.adminEmail.trim())) {
       const admin = await getCurrentAdmin();
       if (!admin) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -84,26 +77,60 @@ export async function PUT(request: Request) {
         return NextResponse.json({ error: "Admin tidak ditemukan" }, { status: 404 });
       }
 
-      const isValid = await verifyPassword(currentPassword, adminRecord.passwordHash);
-      if (!isValid) {
-        return NextResponse.json(
-          { error: "Password saat ini salah. Silakan coba lagi." },
-          { status: 400 }
-        );
-      }
+      const isEmailChanged = body.adminEmail && body.adminEmail.trim().toLowerCase() !== adminRecord.email.toLowerCase();
 
-      if (newPassword.length < 6) {
-        return NextResponse.json(
-          { error: "Password baru minimal 6 karakter." },
-          { status: 400 }
-        );
-      }
+      if (newPassword || isEmailChanged) {
+        if (!currentPassword) {
+          return NextResponse.json(
+            { error: "Password saat ini wajib diisi untuk mengubah kredensial akun." },
+            { status: 400 }
+          );
+        }
 
-      const newHash = await hashPassword(newPassword);
-      await prisma.admin.update({
-        where: { id: admin.adminId },
-        data: { passwordHash: newHash },
-      });
+        const isValid = await verifyPassword(currentPassword, adminRecord.passwordHash);
+        if (!isValid) {
+          return NextResponse.json(
+            { error: "Password saat ini salah. Silakan coba lagi." },
+            { status: 400 }
+          );
+        }
+
+        const updateData: { email?: string; passwordHash?: string } = {};
+
+        if (isEmailChanged) {
+          const targetEmail = body.adminEmail.trim().toLowerCase();
+          const emailExists = await prisma.admin.findFirst({
+            where: {
+              email: targetEmail,
+              id: { not: admin.adminId },
+            },
+          });
+          if (emailExists) {
+            return NextResponse.json(
+              { error: "Email tersebut sudah digunakan oleh akun lain." },
+              { status: 400 }
+            );
+          }
+          updateData.email = targetEmail;
+        }
+
+        if (newPassword) {
+          if (newPassword.length < 6) {
+            return NextResponse.json(
+              { error: "Password baru minimal 6 karakter." },
+              { status: 400 }
+            );
+          }
+          updateData.passwordHash = await hashPassword(newPassword);
+        }
+
+        if (Object.keys(updateData).length > 0) {
+          await prisma.admin.update({
+            where: { id: admin.adminId },
+            data: updateData,
+          });
+        }
+      }
     }
 
     return NextResponse.json({ success: true, message: "Pengaturan berhasil disimpan" });
