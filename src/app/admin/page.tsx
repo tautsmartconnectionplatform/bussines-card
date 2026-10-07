@@ -84,21 +84,24 @@ export default async function AdminDashboardPage() {
     take: 5,
   });
 
-  // 6. Data Tren 14 Hari Terakhir untuk Mini Chart
+  // 6. Data Tren 14 Hari Terakhir untuk Mini Chart (Optimized: 1 query tunggal)
+  const fourteenDaysAgo = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000);
+  fourteenDaysAgo.setHours(0, 0, 0, 0);
+
+  const recentPageViews = await prisma.pageView.findMany({
+    where: { viewedAt: { gte: fourteenDaysAgo } },
+    select: { viewedAt: true },
+  });
+
   const dailyViews: { day: string; count: number }[] = [];
   for (let i = 13; i >= 0; i--) {
     const start = new Date(now.getTime() - i * 24 * 60 * 60 * 1000);
     start.setHours(0, 0, 0, 0);
     const end = new Date(start.getTime() + 24 * 60 * 60 * 1000);
 
-    const count = await prisma.pageView.count({
-      where: {
-        viewedAt: {
-          gte: start,
-          lt: end,
-        },
-      },
-    });
+    const count = recentPageViews.filter(
+      (v) => v.viewedAt >= start && v.viewedAt < end
+    ).length;
 
     const dayName = start.toLocaleDateString("id-ID", {
       day: "numeric",

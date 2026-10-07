@@ -51,7 +51,17 @@ export async function GET(request: Request) {
       count: item._count.deviceType,
     }));
 
-    // 4. Daily Views (30 days)
+    // 4. Daily Views (30 days) - Dioptimasi menjadi 2 query tunggal
+    const recentViews = await prisma.pageView.findMany({
+      where: wherePage,
+      select: { viewedAt: true },
+    });
+
+    const recentClicks = await prisma.linkClick.findMany({
+      where: whereClick,
+      select: { clickedAt: true },
+    });
+
     const dailyStats: { date: string; label: string; views: number; clicks: number }[] = [];
 
     for (let i = 29; i >= 0; i--) {
@@ -59,19 +69,13 @@ export async function GET(request: Request) {
       start.setHours(0, 0, 0, 0);
       const end = new Date(start.getTime() + 24 * 60 * 60 * 1000);
 
-      const dayViews = await prisma.pageView.count({
-        where: {
-          ...wherePage,
-          viewedAt: { gte: start, lt: end },
-        },
-      });
+      const dayViews = recentViews.filter(
+        (v) => v.viewedAt >= start && v.viewedAt < end
+      ).length;
 
-      const dayClicks = await prisma.linkClick.count({
-        where: {
-          ...whereClick,
-          clickedAt: { gte: start, lt: end },
-        },
-      });
+      const dayClicks = recentClicks.filter(
+        (c) => c.clickedAt >= start && c.clickedAt < end
+      ).length;
 
       dailyStats.push({
         date: start.toISOString().split("T")[0],
