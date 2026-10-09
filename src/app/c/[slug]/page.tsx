@@ -5,6 +5,9 @@ import crypto from "crypto";
 import { prisma } from "@/lib/prisma";
 import PublicCardView from "@/components/public/PublicCardView";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 interface PageProps {
   params: {
     slug: string;

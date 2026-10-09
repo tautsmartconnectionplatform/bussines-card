@@ -34,6 +34,21 @@ import {
 } from "@/components/ui/BrandIcons";
 import { generateSlug, normalizeWhatsApp } from "@/lib/normalize";
 
+function isDarkColor(hexColor?: string | null): boolean {
+  if (!hexColor) return false;
+  let c = hexColor.trim().replace(/^#/, "");
+  if (c.length === 3) {
+    c = c.split("").map((x) => x + x).join("");
+  }
+  if (c.length !== 6) return false;
+  const r = parseInt(c.slice(0, 2), 16);
+  const g = parseInt(c.slice(2, 4), 16);
+  const b = parseInt(c.slice(4, 6), 16);
+  if (isNaN(r) || isNaN(g) || isNaN(b)) return false;
+  const yiq = (r * 299 + g * 587 + b * 114) / 1000;
+  return yiq < 140;
+}
+
 interface CustomerFormProps {
   initialData?: {
     id?: string;
@@ -210,6 +225,8 @@ export default function CustomerForm({ initialData, isEdit }: CustomerFormProps)
 
   const displayName = formData.ownerName || formData.businessName || "Nama Anda";
   const primaryPhone = formData.phone || formData.whatsapp;
+  const previewCardBg = formData.accentColor || "#FFFFFF";
+  const isPreviewDark = isDarkColor(previewCardBg);
 
   return (
     <div className="space-y-6">
@@ -598,11 +615,14 @@ export default function CustomerForm({ initialData, isEdit }: CustomerFormProps)
                 </label>
                 <input
                   type="text"
-                  placeholder="https://maps.google.com/?q=..."
+                  placeholder="https://maps.app.goo.gl/... atau https://maps.google.com/?q=..."
                   value={formData.mapsUrl}
                   onChange={(e) => setFormData({ ...formData, mapsUrl: e.target.value })}
                   className="w-full px-3.5 py-2.5 bg-[#070A10] border border-slate-800 rounded-xl text-sm text-white focus:outline-none focus:border-[#D4AF37]"
                 />
+                <p className="text-[11px] text-slate-400 mt-1">
+                  Jika dikosongkan, tombol Maps akan otomatis membuka pencarian alamat di Google Maps.
+                </p>
               </div>
             </div>
           </div>
@@ -798,229 +818,342 @@ export default function CustomerForm({ initialData, isEdit }: CustomerFormProps)
 
           {/* Mock Phone Frame */}
           <div className="w-full max-w-[340px] mx-auto bg-slate-900 rounded-[40px] p-3 shadow-2xl border-4 border-slate-700 relative">
-            {/* Top Phone Speaker Notch */}
-            <div className="w-20 h-3.5 bg-slate-800 rounded-full mx-auto mb-2" />
+                {/* Top Phone Speaker Notch */}
+                <div className="w-20 h-3.5 bg-slate-800 rounded-full mx-auto mb-2" />
 
-            {/* Phone Screen */}
-            <div className="w-full bg-[#F6F4EE] rounded-[30px] p-2.5 text-slate-800 overflow-y-auto relative border border-slate-700/60 max-h-[580px] space-y-2.5">
-              {/* Top Share Button */}
-              <div className="flex justify-end pr-0.5">
-                <div className="flex items-center gap-1 px-2.5 py-0.5 text-[9px] font-medium text-slate-700 bg-white border border-[#E5E0D6] rounded-full shadow-xs">
-                  <Share2 className="w-2.5 h-2.5 text-slate-600" />
-                  <span>Bagikan</span>
-                </div>
-              </div>
-
-              {/* 1. SECTION PROFIL */}
-              <div className="bg-white rounded-2xl border border-[#ECE7DE] shadow-xs text-center relative overflow-hidden">
-                {/* Cover Banner */}
-                <div className="w-full h-16 relative bg-[#0B1528] overflow-hidden flex items-center justify-center">
-                  {formData.coverPath ? (
-                    <img
-                      src={formData.coverPath}
-                      alt="Sampul"
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <div className="flex items-center justify-center gap-1.5 pb-2">
-                      <span className="text-white font-extrabold text-sm tracking-widest">TAUT</span>
-                    </div>
-                  )}
-                </div>
-
-                <div className="p-3 -mt-7 relative z-10 flex flex-col items-center">
-                  {formData.logoPath ? (
-                    <img
-                      src={formData.logoPath}
-                      alt="Logo"
-                      className="w-13 h-13 rounded-xl object-contain shadow-md border-2 border-white bg-[#0B1528] mx-auto mb-1.5"
-                    />
-                  ) : (
-                    <div
-                      className="w-13 h-13 rounded-xl flex items-center justify-center text-white text-base font-extrabold shadow-md border-2 border-white bg-[#0B1528] mx-auto mb-1.5"
-                    >
-                      {displayName.charAt(0).toUpperCase()}
-                    </div>
-                  )}
-
-                  <h3 className="font-bold text-xs text-slate-900 tracking-tight line-clamp-1">
-                    {displayName}
-                  </h3>
-                  {formData.jobTitle && (
-                    <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#FAF6EE] border border-[#EBDDC3] text-[#8C6D3F] text-[9px] font-semibold mt-1">
-                      <span>💼</span>
-                      <span>{formData.jobTitle}</span>
-                    </div>
-                  )}
-                  {formData.businessName && (
-                    <p className="text-[9px] font-semibold text-slate-500 uppercase tracking-widest mt-1">{formData.businessName}</p>
-                  )}
-                  {formData.tagline && (
-                    <p className="text-[9px] text-slate-400 mt-0.5 line-clamp-1">{formData.tagline}</p>
-                  )}
-
-                  {/* Quick actions */}
-                  <div className="grid grid-cols-4 gap-1.5 w-full mt-2.5 pt-2 border-t border-[#F0ECE3] text-[9px] text-slate-700">
-                    <div className="p-1 rounded-xl bg-[#F9F8F5] border border-[#ECE7DE] flex flex-col items-center">
-                      <Phone className="w-3 h-3 text-slate-700 mb-0.5" />
-                      <span>Telpon</span>
-                    </div>
-                    <div className="p-1 rounded-xl bg-[#F9F8F5] border border-[#ECE7DE] flex flex-col items-center">
-                      <MessageSquare className="w-3 h-3 text-slate-700 mb-0.5" />
-                      <span>SMS</span>
-                    </div>
-                    <div className="p-1 rounded-xl bg-[#F9F8F5] border border-[#ECE7DE] flex flex-col items-center">
-                      <Mail className="w-3 h-3 text-slate-700 mb-0.5" />
-                      <span>Email</span>
-                    </div>
-                    <div className="p-1 rounded-xl bg-[#F9F8F5] border border-[#ECE7DE] flex flex-col items-center">
-                      <MapPin className="w-3 h-3 text-slate-700 mb-0.5" />
-                      <span>Lokasi</span>
+                {/* Phone Screen - Latar belakang penuh mengikuti warna aksen */}
+                <div
+                  className="w-full rounded-[30px] p-2.5 overflow-y-auto relative border border-slate-700/60 max-h-[580px] space-y-2.5 transition-colors"
+                  style={{ backgroundColor: previewCardBg, color: isPreviewDark ? "#FFFFFF" : "#1E293B" }}
+                >
+                  {/* Top Share Button */}
+                  <div className="flex justify-end pr-0.5">
+                    <div className={`flex items-center gap-1 px-2.5 py-0.5 text-[9px] font-medium rounded-full shadow-xs ${
+                      isPreviewDark
+                        ? "bg-white/15 border border-white/25 text-white"
+                        : "bg-black/[0.04] border border-black/[0.08] text-slate-800"
+                    }`}>
+                      <Share2 className="w-2.5 h-2.5" />
+                      <span>Bagikan</span>
                     </div>
                   </div>
-                </div>
-              </div>
 
-              {/* 2. SECTION KONTAK */}
-              <div className="bg-white rounded-2xl p-2.5 border border-[#ECE7DE] shadow-xs space-y-1.5 text-left">
-                <div className="flex items-center justify-between pb-0.5">
-                  <span className="text-[9px] font-bold text-slate-900 uppercase tracking-wider flex items-center gap-1">
-                    <User className="w-3 h-3 text-slate-700" />
-                    <span>Kontak</span>
-                  </span>
-                  <span className="text-[9px] text-[#9E8357] font-medium">Informasi Resmi</span>
-                </div>
-                <div className="space-y-1 text-[9px]">
-                  <div className="flex items-center justify-between p-1.5 bg-[#F9F8F5] border border-[#ECE7DE] rounded-xl">
-                    <span className="text-slate-400">Nama:</span>
-                    <span className="text-slate-900 font-bold truncate">{displayName}</span>
+                  {/* 1. SECTION PROFIL */}
+                  <div
+                    className={`rounded-2xl border shadow-xs text-center relative overflow-hidden ${
+                      isPreviewDark ? "border-white/20 shadow-md" : "border-black/[0.08]"
+                    }`}
+                    style={{ backgroundColor: previewCardBg }}
+                  >
+                    {/* Cover Banner */}
+                    <div className="w-full h-16 relative bg-[#0B1528] overflow-hidden flex items-center justify-center">
+                      {formData.coverPath ? (
+                        <img
+                          src={formData.coverPath}
+                          alt="Sampul"
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="flex items-center justify-center gap-1.5 pb-2">
+                          <span className="text-white font-extrabold text-sm tracking-widest">TAUT</span>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Squircle Avatar / Logo - Ukuran proporsional w-14 h-14 */}
+                    <div className="relative -mt-8 mb-2 z-10 shrink-0">
+                      <div className={`w-14 h-14 rounded-2xl bg-[#0B1528] border-2 ${
+                        isPreviewDark ? "border-white/90" : "border-white"
+                      } shadow-md flex items-center justify-center overflow-hidden p-0.5 shrink-0 mx-auto`}>
+                        {formData.logoPath ? (
+                          <img
+                            src={formData.logoPath}
+                            alt="Logo"
+                            className="w-full h-full object-cover rounded-[14px]"
+                          />
+                        ) : (
+                          <div className="text-white text-sm font-extrabold">
+                            {displayName.charAt(0).toUpperCase()}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="px-3 pb-3 flex flex-col items-center">
+
+                      <h3 className={`font-bold text-xs tracking-tight line-clamp-1 ${
+                        isPreviewDark ? "text-white" : "text-slate-900"
+                      }`}>
+                        {displayName}
+                      </h3>
+                      {/* Job Title - Hapus simbol */}
+                      {formData.jobTitle && (
+                        <div className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[9px] font-semibold mt-1 ${
+                          isPreviewDark
+                            ? "bg-white/20 border border-white/30 text-white"
+                            : "bg-black/[0.05] border border-black/10 text-slate-800"
+                        }`}>
+                          <span>{formData.jobTitle}</span>
+                        </div>
+                      )}
+                      {formData.businessName && (
+                        <p className={`text-[9px] font-semibold uppercase tracking-widest mt-1 ${
+                          isPreviewDark ? "text-white/80" : "text-slate-500"
+                        }`}>{formData.businessName}</p>
+                      )}
+                      {formData.tagline && (
+                        <p className={`text-[9px] mt-0.5 line-clamp-1 ${
+                          isPreviewDark ? "text-white/70" : "text-slate-400"
+                        }`}>{formData.tagline}</p>
+                      )}
+
+                      {/* Quick actions - 4 tombol icon-only (Telpon, SMS, Email, Maps) */}
+                      <div className={`grid grid-cols-4 gap-1.5 w-full mt-2.5 pt-2 border-t text-[9px] ${
+                        isPreviewDark ? "border-white/15" : "border-black/[0.06]"
+                      }`}>
+                        <div className={`p-2 rounded-xl border flex items-center justify-center ${
+                          isPreviewDark ? "bg-white/15 border-white/20 text-white" : "bg-black/[0.04] border-black/[0.08] text-slate-800"
+                        }`}>
+                          <Phone className="w-3.5 h-3.5" />
+                        </div>
+                        <div className={`p-2 rounded-xl border flex items-center justify-center ${
+                          isPreviewDark ? "bg-white/15 border-white/20 text-white" : "bg-black/[0.04] border-black/[0.08] text-slate-800"
+                        }`}>
+                          <MessageSquare className="w-3.5 h-3.5" />
+                        </div>
+                        <div className={`p-2 rounded-xl border flex items-center justify-center ${
+                          isPreviewDark ? "bg-white/15 border-white/20 text-white" : "bg-black/[0.04] border-black/[0.08] text-slate-800"
+                        }`}>
+                          <Mail className="w-3.5 h-3.5" />
+                        </div>
+                        <div className={`p-2 rounded-xl border flex items-center justify-center ${
+                          isPreviewDark ? "bg-white/15 border-white/20 text-white" : "bg-black/[0.04] border-black/[0.08] text-slate-800"
+                        }`}>
+                          <MapPin className="w-3.5 h-3.5" />
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                  {primaryPhone && (
-                    <div className="flex items-center justify-between p-1.5 bg-[#F9F8F5] border border-[#ECE7DE] rounded-xl">
-                      <span className="text-slate-400">Telpon:</span>
-                      <span className="text-slate-900 font-bold">+{primaryPhone}</span>
-                    </div>
-                  )}
-                  {formData.email && (
-                    <div className="flex items-center justify-between p-1.5 bg-[#F9F8F5] border border-[#ECE7DE] rounded-xl">
-                      <span className="text-slate-400">Email:</span>
-                      <span className="text-slate-900 font-bold truncate">{formData.email}</span>
-                    </div>
-                  )}
-                  {formData.businessName && (
-                    <div className="flex items-center justify-between p-1.5 bg-[#F9F8F5] border border-[#ECE7DE] rounded-xl">
-                      <span className="text-slate-400">Perusahaan:</span>
-                      <span className="text-slate-900 font-bold truncate">{formData.businessName}</span>
-                    </div>
-                  )}
-                </div>
 
-                <div className="w-full py-2 px-3 rounded-xl font-semibold bg-[#0B1528] text-white text-[10px] flex items-center justify-between shadow-xs mt-1">
-                  <Download className="w-3 h-3 text-white/80" />
-                  <span>Simpan Kontak ke HP (.vcf)</span>
-                  <Download className="w-3 h-3 text-white/80" />
-                </div>
-              </div>
-
-              {/* 3. SECTION LOKASI */}
-              {(formData.address || formData.city) && (
-                <div className="bg-white rounded-2xl p-2.5 border border-[#ECE7DE] shadow-xs space-y-1.5 text-left">
-                  <div className="flex items-center justify-between">
-                    <span className="text-[9px] font-bold text-slate-900 uppercase tracking-wider flex items-center gap-1">
-                      <MapPin className="w-3 h-3 text-slate-700" />
-                      <span>Lokasi</span>
-                    </span>
-                    {formData.city && (
-                      <span className="text-[8px] font-medium text-[#9E8357] bg-[#FDF6ED] border border-[#F2E2CE] px-1.5 py-0.2 rounded-full">
-                        {formData.city}
+                  {/* 2. SECTION KONTAK */}
+                  <div
+                    className={`rounded-2xl p-2.5 border shadow-xs space-y-1.5 text-left ${
+                      isPreviewDark ? "border-white/20 shadow-md" : "border-black/[0.08]"
+                    }`}
+                    style={{ backgroundColor: previewCardBg }}
+                  >
+                    {/* Header - Hapus teks 'Informasi Resmi' */}
+                    <div className="flex items-center justify-between pb-0.5">
+                      <span className={`text-[9px] font-bold uppercase tracking-wider ${
+                        isPreviewDark ? "text-white" : "text-slate-900"
+                      }`}>
+                        KONTAK
                       </span>
-                    )}
-                  </div>
-                  <p className="text-[9px] text-slate-700 line-clamp-2">{formData.address}</p>
-                  <div className="w-full py-1.5 px-2.5 rounded-xl bg-[#F9F8F5] border border-[#ECE7DE] text-[9px] font-semibold text-slate-800 flex items-center justify-between">
-                    <span>Show on Map (Buka di Peta)</span>
-                    <ExternalLink className="w-2.5 h-2.5 text-slate-400" />
-                  </div>
-                </div>
-              )}
+                    </div>
 
-              {/* 4. SECTION WEBSITE */}
-              {formData.website && (
-                <div className="bg-white rounded-2xl p-2.5 border border-[#ECE7DE] shadow-xs space-y-1 text-left">
-                  <span className="text-[9px] font-bold text-slate-900 uppercase tracking-wider flex items-center gap-1">
-                    <Globe className="w-3 h-3 text-slate-700" />
-                    <span>Website</span>
-                  </span>
-                  <div className="p-1.5 rounded-xl bg-[#F9F8F5] border border-[#ECE7DE] flex items-center justify-between text-[9px]">
-                    <span className="text-slate-900 font-bold truncate">{formData.website}</span>
-                    <ExternalLink className="w-2.5 h-2.5 text-slate-400" />
-                  </div>
-                </div>
-              )}
+                    <div className="space-y-1 text-[9px]">
+                      {/* Nama - Hapus simbol */}
+                      <div className={`p-1.5 border rounded-xl ${
+                        isPreviewDark ? "bg-white/15 border-white/20" : "bg-black/[0.04] border-black/[0.08]"
+                      }`}>
+                        <span className={`block text-[8px] leading-tight ${isPreviewDark ? "text-white/60" : "text-slate-400"}`}>Nama</span>
+                        <span className={`font-bold truncate block ${isPreviewDark ? "text-white" : "text-slate-900"}`}>{displayName}</span>
+                      </div>
+                      {/* Telpon - Hapus simbol */}
+                      {primaryPhone && (
+                        <div className={`p-1.5 border rounded-xl ${
+                          isPreviewDark ? "bg-white/15 border-white/20" : "bg-black/[0.04] border-black/[0.08]"
+                        }`}>
+                          <span className={`block text-[8px] leading-tight ${isPreviewDark ? "text-white/60" : "text-slate-400"}`}>Nomor Telpon</span>
+                          <span className={`font-bold block ${isPreviewDark ? "text-white" : "text-slate-900"}`}>+{primaryPhone}</span>
+                        </div>
+                      )}
+                      {/* Email - Hapus simbol */}
+                      {formData.email && (
+                        <div className={`p-1.5 border rounded-xl ${
+                          isPreviewDark ? "bg-white/15 border-white/20" : "bg-black/[0.04] border-black/[0.08]"
+                        }`}>
+                          <span className={`block text-[8px] leading-tight ${isPreviewDark ? "text-white/60" : "text-slate-400"}`}>Email</span>
+                          <span className={`font-bold truncate block ${isPreviewDark ? "text-white" : "text-slate-900"}`}>{formData.email}</span>
+                        </div>
+                      )}
+                      {/* Perusahaan - Hapus simbol */}
+                      {formData.businessName && (
+                        <div className={`p-1.5 border rounded-xl ${
+                          isPreviewDark ? "bg-white/15 border-white/20" : "bg-black/[0.04] border-black/[0.08]"
+                        }`}>
+                          <span className={`block text-[8px] leading-tight ${isPreviewDark ? "text-white/60" : "text-slate-400"}`}>Perusahaan</span>
+                          <span className={`font-bold truncate block ${isPreviewDark ? "text-white" : "text-slate-900"}`}>{formData.businessName}</span>
+                        </div>
+                      )}
+                    </div>
 
-              {/* 5. SECTION MEDIA SOSIAL */}
-              <div className="bg-white rounded-2xl p-2.5 border border-[#ECE7DE] shadow-xs space-y-1 text-left">
-                <span className="text-[9px] font-bold text-slate-900 uppercase tracking-wider flex items-center gap-1">
-                  <Share2 className="w-3 h-3 text-slate-700" />
-                  <span>Media Sosial & Chat</span>
-                </span>
-                <div className="space-y-1 text-[9px]">
-                  {formData.whatsapp && (
-                    <div className="p-1.5 rounded-xl bg-[#F9F8F5] border border-[#ECE7DE] flex items-center justify-between">
-                      <div className="flex items-center gap-1.5 text-slate-900">
-                        <WhatsAppIcon size={12} className="text-[#25D366]" />
-                        <span className="font-bold">WhatsApp</span>
-                        <span className="text-[8px] text-slate-500">+{formData.whatsapp}</span>
+                    <div className={`w-full py-2 px-3 rounded-xl font-semibold text-[10px] flex items-center justify-between shadow-xs mt-1 ${
+                      isPreviewDark ? "bg-white text-slate-900" : "bg-[#0B1528] text-white"
+                    }`}>
+                      <Download className="w-3 h-3 opacity-80" />
+                      <span>Simpan Kontak ke HP (.vcf)</span>
+                      <Download className="w-3 h-3 opacity-80" />
+                    </div>
+                  </div>
+
+                  {/* 3. SECTION LOKASI */}
+                  {(formData.address || formData.city) && (
+                    <div
+                      className={`rounded-2xl p-2.5 border shadow-xs space-y-1.5 text-left ${
+                        isPreviewDark ? "border-white/20 shadow-md" : "border-black/[0.08]"
+                      }`}
+                      style={{ backgroundColor: previewCardBg }}
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className={`text-[9px] font-bold uppercase tracking-wider flex items-center gap-1 ${
+                          isPreviewDark ? "text-white" : "text-slate-900"
+                        }`}>
+                          <MapPin className={`w-3 h-3 ${isPreviewDark ? "text-white/80" : "text-slate-700"}`} />
+                          <span>Lokasi</span>
+                        </span>
+                        {formData.city && (
+                          <span className={`text-[8px] font-medium px-1.5 py-0.2 rounded-full border ${
+                            isPreviewDark
+                              ? "bg-white/20 text-amber-200 border-white/30"
+                              : "text-[#9E8357] bg-[#FDF6ED] border-[#F2E2CE]"
+                          }`}>
+                            {formData.city}
+                          </span>
+                        )}
                       </div>
-                      <ExternalLink className="w-2.5 h-2.5 text-slate-400" />
+                      <p className={`text-[9px] line-clamp-2 ${isPreviewDark ? "text-white/90" : "text-slate-700"}`}>{formData.address}</p>
+                      <div className={`w-full py-1.5 px-2.5 rounded-xl border text-[9px] font-semibold flex items-center justify-between ${
+                        isPreviewDark
+                          ? "bg-white/15 border-white/20 text-white"
+                          : "bg-black/[0.04] border-black/[0.08] text-slate-800"
+                      }`}>
+                        <span>Buka di Google Maps</span>
+                        <ExternalLink className="w-2.5 h-2.5 opacity-60" />
+                      </div>
                     </div>
                   )}
-                  {formData.instagramUsername && (
-                    <div className="p-1.5 rounded-xl bg-[#F9F8F5] border border-[#ECE7DE] flex items-center justify-between">
-                      <div className="flex items-center gap-1.5 text-slate-900">
-                        <InstagramIcon size={12} className="text-[#E1306C]" />
-                        <span className="font-bold">Instagram</span>
-                        <span className="text-[8px] text-slate-500">@{formData.instagramUsername}</span>
+
+                  {/* 4. SECTION WEBSITE */}
+                  {formData.website && (
+                    <div
+                      className={`rounded-2xl p-2.5 border shadow-xs space-y-1 text-left ${
+                        isPreviewDark ? "border-white/20 shadow-md" : "border-black/[0.08]"
+                      }`}
+                      style={{ backgroundColor: previewCardBg }}
+                    >
+                      <span className={`text-[9px] font-bold uppercase tracking-wider flex items-center gap-1 ${
+                        isPreviewDark ? "text-white" : "text-slate-900"
+                      }`}>
+                        <Globe className={`w-3 h-3 ${isPreviewDark ? "text-white/80" : "text-slate-700"}`} />
+                        <span>Website</span>
+                      </span>
+                      <div className={`p-1.5 rounded-xl border flex items-center justify-between text-[9px] ${
+                        isPreviewDark
+                          ? "bg-white/15 border-white/20 text-white"
+                          : "bg-black/[0.04] border-black/[0.08] text-slate-900"
+                      }`}>
+                        <span className="font-bold truncate">{formData.website}</span>
+                        <ExternalLink className="w-2.5 h-2.5 opacity-60" />
                       </div>
-                      <ExternalLink className="w-2.5 h-2.5 text-slate-400" />
                     </div>
                   )}
-                  {formData.facebookUrl && (
-                    <div className="p-1.5 rounded-xl bg-[#F9F8F5] border border-[#ECE7DE] flex items-center justify-between">
-                      <div className="flex items-center gap-1.5 text-slate-900">
-                        <FacebookIcon size={12} className="text-[#1877F2]" />
-                        <span className="font-bold">Facebook</span>
-                        <span className="text-[8px] text-slate-500">Halaman / Profil</span>
-                      </div>
-                      <ExternalLink className="w-2.5 h-2.5 text-slate-400" />
-                    </div>
-                  )}
-                  {formData.tiktokUsername && (
-                    <div className="p-1.5 rounded-xl bg-[#F9F8F5] border border-[#ECE7DE] flex items-center justify-between">
-                      <div className="flex items-center gap-1.5 text-slate-900">
-                        <TikTokIcon size={12} className="text-slate-900" />
-                        <span className="font-bold">TikTok</span>
-                        <span className="text-[8px] text-slate-500">@{formData.tiktokUsername}</span>
-                      </div>
-                      <ExternalLink className="w-2.5 h-2.5 text-slate-400" />
-                    </div>
-                  )}
-                  {formData.linkedinUrl && (
-                    <div className="p-1.5 rounded-xl bg-[#F9F8F5] border border-[#ECE7DE] flex items-center justify-between">
-                      <div className="flex items-center gap-1.5 text-slate-900">
-                        <LinkedInIcon size={12} className="text-[#0A66C2]" />
-                        <span className="font-bold">LinkedIn</span>
-                        <span className="text-[8px] text-slate-500">Profil</span>
-                      </div>
-                      <ExternalLink className="w-2.5 h-2.5 text-slate-400" />
-                    </div>
-                  )}
+
+                  {/* 5. SECTION MEDIA SOSIAL - 1 warna logo, tanpa subtitle */}
+                  <div
+                    className={`rounded-2xl p-2.5 border shadow-xs space-y-1 text-left ${
+                      isPreviewDark ? "border-white/20 shadow-md" : "border-black/[0.08]"
+                    }`}
+                    style={{ backgroundColor: previewCardBg }}
+                  >
+                    <span className={`text-[9px] font-bold uppercase tracking-wider flex items-center gap-1 ${
+                      isPreviewDark ? "text-white" : "text-slate-900"
+                    }`}>
+                      <Share2 className={`w-3 h-3 ${isPreviewDark ? "text-white/80" : "text-slate-700"}`} />
+                      <span>Media Sosial & Chat</span>
+                    </span>
+                    <div className="space-y-1 text-[9px]">
+                      {formData.whatsapp && (
+                        <div className={`p-1.5 rounded-xl border flex items-center justify-between ${
+                          isPreviewDark ? "bg-white/15 border-white/20 text-white" : "bg-black/[0.04] border-black/[0.08] text-slate-800"
+                        }`}>
+                          <div className="flex items-center gap-1.5">
+                            <div className={`w-5 h-5 rounded-full flex items-center justify-center shrink-0 ${
+                              isPreviewDark ? "bg-white/15 text-white" : "bg-black/[0.05] text-slate-900"
+                            }`}>
+                              <WhatsAppIcon size={12} />
+                            </div>
+                            <span className="font-bold">WhatsApp</span>
+                          </div>
+                          <ExternalLink className="w-2.5 h-2.5 opacity-60" />
+                        </div>
+                      )}
+                      {formData.instagramUsername && (
+                        <div className={`p-1.5 rounded-xl border flex items-center justify-between ${
+                          isPreviewDark ? "bg-white/15 border-white/20 text-white" : "bg-black/[0.04] border-black/[0.08] text-slate-800"
+                        }`}>
+                          <div className="flex items-center gap-1.5">
+                            <div className={`w-5 h-5 rounded-full flex items-center justify-center shrink-0 ${
+                              isPreviewDark ? "bg-white/15 text-white" : "bg-black/[0.05] text-slate-900"
+                            }`}>
+                              <InstagramIcon size={12} />
+                            </div>
+                            <span className="font-bold">Instagram</span>
+                          </div>
+                          <ExternalLink className="w-2.5 h-2.5 opacity-60" />
+                        </div>
+                      )}
+                      {formData.facebookUrl && (
+                        <div className={`p-1.5 rounded-xl border flex items-center justify-between ${
+                          isPreviewDark ? "bg-white/15 border-white/20 text-white" : "bg-black/[0.04] border-black/[0.08] text-slate-800"
+                        }`}>
+                          <div className="flex items-center gap-1.5">
+                            <div className={`w-5 h-5 rounded-full flex items-center justify-center shrink-0 ${
+                              isPreviewDark ? "bg-white/15 text-white" : "bg-black/[0.05] text-slate-900"
+                            }`}>
+                              <FacebookIcon size={12} />
+                            </div>
+                            <span className="font-bold">Facebook</span>
+                          </div>
+                          <ExternalLink className="w-2.5 h-2.5 opacity-60" />
+                        </div>
+                      )}
+                      {formData.tiktokUsername && (
+                        <div className={`p-1.5 rounded-xl border flex items-center justify-between ${
+                          isPreviewDark ? "bg-white/15 border-white/20 text-white" : "bg-black/[0.04] border-black/[0.08] text-slate-800"
+                        }`}>
+                          <div className="flex items-center gap-1.5">
+                            <div className={`w-5 h-5 rounded-full flex items-center justify-center shrink-0 ${
+                              isPreviewDark ? "bg-white/15 text-white" : "bg-black/[0.05] text-slate-900"
+                            }`}>
+                              <TikTokIcon size={12} />
+                            </div>
+                            <span className="font-bold">TikTok</span>
+                          </div>
+                          <ExternalLink className="w-2.5 h-2.5 opacity-60" />
+                        </div>
+                      )}
+                      {formData.linkedinUrl && (
+                        <div className={`p-1.5 rounded-xl border flex items-center justify-between ${
+                          isPreviewDark ? "bg-white/15 border-white/20 text-white" : "bg-black/[0.04] border-black/[0.08] text-slate-800"
+                        }`}>
+                          <div className="flex items-center gap-1.5">
+                            <div className={`w-5 h-5 rounded-full flex items-center justify-center shrink-0 ${
+                              isPreviewDark ? "bg-white/15 text-white" : "bg-black/[0.05] text-slate-900"
+                            }`}>
+                              <LinkedInIcon size={12} />
+                            </div>
+                            <span className="font-bold">LinkedIn</span>
+                          </div>
+                          <ExternalLink className="w-2.5 h-2.5 opacity-60" />
+                        </div>
+                      )}
+                  </div>
                 </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
-    </div>
+        </div>
   );
 }

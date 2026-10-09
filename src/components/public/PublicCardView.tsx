@@ -81,6 +81,21 @@ function TautRibbonLogo({ className = "" }: { className?: string }) {
   );
 }
 
+function isDarkColor(hexColor?: string | null): boolean {
+  if (!hexColor) return false;
+  let c = hexColor.trim().replace(/^#/, "");
+  if (c.length === 3) {
+    c = c.split("").map((x) => x + x).join("");
+  }
+  if (c.length !== 6) return false;
+  const r = parseInt(c.slice(0, 2), 16);
+  const g = parseInt(c.slice(2, 4), 16);
+  const b = parseInt(c.slice(4, 6), 16);
+  if (isNaN(r) || isNaN(g) || isNaN(b)) return false;
+  const yiq = (r * 299 + g * 587 + b * 114) / 1000;
+  return yiq < 140;
+}
+
 export default function PublicCardView({ customer, footerText }: PublicCardViewProps) {
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [qrModalOpen, setQrModalOpen] = useState(false);
@@ -89,18 +104,21 @@ export default function PublicCardView({ customer, footerText }: PublicCardViewP
   const primaryPhone = customer.phone || customer.whatsapp;
   const displayName = customer.ownerName || customer.businessName;
 
-  // Set body background to warm light tone on mount
+  const cardBg = customer.accentColor || "#FFFFFF";
+  const isDark = isDarkColor(cardBg);
+
+  // Set body background to match accent color dynamically
   useEffect(() => {
     const originalBg = document.body.style.backgroundColor;
     const originalColor = document.body.style.color;
-    document.body.style.backgroundColor = "#F6F4EE";
-    document.body.style.color = "#1E293B";
+    document.body.style.backgroundColor = cardBg;
+    document.body.style.color = isDark ? "#FFFFFF" : "#1E293B";
 
     return () => {
       document.body.style.backgroundColor = originalBg;
       document.body.style.color = originalColor;
     };
-  }, []);
+  }, [cardBg, isDark]);
 
   // Show temporary toast notification
   const showToast = (msg: string) => {
@@ -192,18 +210,49 @@ export default function PublicCardView({ customer, footerText }: PublicCardViewP
     showToast("Mengunduh kontak vCard...");
   };
 
+  const handleMapsClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    trackClick("maps");
+
+    const targetUrl =
+      mapsLink && !mapsLink.startsWith("#")
+        ? mapsLink
+        : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+            [customer.address, customer.city].filter(Boolean).join(", ") || "Google Maps"
+          )}`;
+
+    if (typeof window !== "undefined") {
+      window.open(targetUrl, "_blank", "noopener,noreferrer");
+    }
+  };
+
   // WhatsApp URL formulation
   const waMessage = customer.whatsappMessage
     ? encodeURIComponent(customer.whatsappMessage)
     : "";
   const waUrl = `https://wa.me/${customer.whatsapp}${waMessage ? `?text=${waMessage}` : ""}`;
 
-  // Maps URL fallback
-  const mapsLink =
-    customer.mapsUrl ||
-    `https://maps.google.com/?q=${encodeURIComponent(
-      customer.city ? `${customer.address}, ${customer.city}` : customer.address
-    )}`;
+  // Google Maps URL (langsung mengarah ke Google Maps eksternal, bukan scroll internal)
+  const rawMapsUrl = customer.mapsUrl?.trim();
+  const isValidMapsUrl = Boolean(
+    rawMapsUrl &&
+    !rawMapsUrl.startsWith("#") &&
+    !rawMapsUrl.includes("section-lokasi")
+  );
+
+  const mapsLocationQuery = [
+    customer.address?.trim(),
+    customer.city?.trim() && customer.city.trim() !== customer.address.trim() ? customer.city.trim() : null,
+  ].filter(Boolean).join(", ");
+
+  const mapsLink = isValidMapsUrl
+    ? rawMapsUrl!.startsWith("http://") || rawMapsUrl!.startsWith("https://")
+      ? rawMapsUrl!
+      : `https://${rawMapsUrl}`
+    : mapsLocationQuery
+    ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(mapsLocationQuery)}`
+    : "https://maps.google.com";
 
   // Formatted display website
   const displayWebsite = customer.website
@@ -219,7 +268,10 @@ export default function PublicCardView({ customer, footerText }: PublicCardViewP
     : null;
 
   return (
-    <div className="min-h-screen bg-[#F6F4EE] text-slate-800 selection:bg-[#EBDDC3] selection:text-slate-900 relative overflow-x-hidden font-sans">
+    <div
+      className="min-h-screen relative overflow-x-hidden font-sans transition-colors duration-200"
+      style={{ backgroundColor: cardBg, color: isDark ? "#FFFFFF" : "#1E293B" }}
+    >
       {/* Toast Notification */}
       {toastMessage && (
         <div
@@ -242,18 +294,26 @@ export default function PublicCardView({ customer, footerText }: PublicCardViewP
               setQrModalOpen(true);
             }}
             aria-label="Tampilkan QR Code"
-            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-700 bg-white hover:bg-[#FAF9F5] border border-[#E5E0D6] rounded-full shadow-sm transition-all active:scale-95"
+            className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-full shadow-xs transition-all active:scale-95 ${
+              isDark
+                ? "bg-white/15 hover:bg-white/25 border border-white/25 text-white"
+                : "bg-black/[0.04] hover:bg-black/[0.08] border border-black/[0.08] text-slate-800"
+            }`}
           >
-            <QrIcon className="w-3.5 h-3.5 text-slate-600" />
+            <QrIcon className="w-3.5 h-3.5" />
             <span>QR</span>
           </button>
 
           <button
             onClick={handleShare}
             aria-label="Bagikan profil"
-            className="flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-medium text-slate-700 bg-white hover:bg-[#FAF9F5] border border-[#E5E0D6] rounded-full shadow-sm transition-all active:scale-95"
+            className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-full shadow-xs transition-all active:scale-95 ${
+              isDark
+                ? "bg-white/15 hover:bg-white/25 border border-white/25 text-white"
+                : "bg-black/[0.04] hover:bg-black/[0.08] border border-black/[0.08] text-slate-800"
+            }`}
           >
-            <Share2 className="w-3.5 h-3.5 text-slate-600" />
+            <Share2 className="w-3.5 h-3.5" />
             <span>Bagikan</span>
           </button>
         </div>
@@ -263,7 +323,10 @@ export default function PublicCardView({ customer, footerText }: PublicCardViewP
         {/* ============================================================ */}
         <section
           aria-label="Profil Bisnis"
-          className="w-full bg-white rounded-[26px] border border-[#ECE7DE] shadow-[0_2px_12px_rgba(0,0,0,0.025)] overflow-hidden flex flex-col items-center text-center"
+          className={`w-full rounded-[26px] border ${
+            isDark ? "border-white/20 shadow-lg" : "border-black/[0.08] shadow-xs"
+          } overflow-hidden flex flex-col items-center text-center`}
+          style={{ backgroundColor: cardBg }}
         >
           {/* Top Navy Banner */}
           <div className="w-full h-28 sm:h-32 bg-[#0B1528] relative flex items-center justify-center overflow-hidden">
@@ -284,13 +347,15 @@ export default function PublicCardView({ customer, footerText }: PublicCardViewP
           </div>
 
           {/* Squircle Avatar / Logo (Overlapping Banner) */}
-          <div className="relative -mt-11 sm:-mt-12 mb-3 z-10">
-            <div className="w-20 h-20 sm:w-22 sm:h-22 rounded-[22px] bg-[#0B1528] border-[3px] border-white shadow-md flex flex-col items-center justify-center overflow-hidden p-1.5">
+          <div className="relative -mt-11 sm:-mt-12 mb-3 z-10 shrink-0">
+            <div className={`w-20 h-20 sm:w-24 sm:h-24 rounded-[22px] bg-[#0B1528] border-[3px] ${
+              isDark ? "border-white/90" : "border-white"
+            } shadow-md flex items-center justify-center overflow-hidden p-0.5 shrink-0 mx-auto`}>
               {customer.logoPath ? (
                 <img
                   src={customer.logoPath}
                   alt={displayName}
-                  className="w-full h-full object-contain rounded-xl"
+                  className="w-full h-full object-cover rounded-[18px]"
                 />
               ) : (
                 <div className="flex flex-col items-center justify-center">
@@ -304,43 +369,59 @@ export default function PublicCardView({ customer, footerText }: PublicCardViewP
           </div>
 
           {/* Profile Name */}
-          <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight px-4">
+          <h1 className={`text-xl sm:text-2xl font-bold tracking-tight px-4 ${
+            isDark ? "text-white" : "text-slate-900"
+          }`}>
             {displayName}
           </h1>
 
-          {/* Job Title / Role Badge */}
+          {/* Job Title / Role Badge - Hapus simbol, hanya teks */}
           {customer.jobTitle && (
-            <div className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-[#FAF6EE] border border-[#EBDDC3] text-[#8C6D3F] text-xs font-medium mt-2 shadow-sm">
-              <span className="text-xs">💼</span>
+            <div className={`inline-flex items-center px-3.5 py-1 rounded-full text-xs font-semibold mt-2 shadow-xs ${
+              isDark
+                ? "bg-white/20 border border-white/30 text-white"
+                : "bg-black/[0.05] border border-black/10 text-slate-800"
+            }`}>
               <span>{customer.jobTitle}</span>
             </div>
           )}
 
           {/* Company Name */}
           {customer.businessName && (
-            <p className="text-xs font-semibold text-slate-500 uppercase tracking-widest mt-2 px-4">
+            <p className={`text-xs font-semibold uppercase tracking-widest mt-2 px-4 ${
+              isDark ? "text-white/80" : "text-slate-500"
+            }`}>
               {customer.businessName}
             </p>
           )}
 
           {/* Bio / Tagline */}
           {customer.tagline && (
-            <p className="text-xs text-slate-400 mt-1 max-w-xs px-4 font-normal">
+            <p className={`text-xs mt-1 max-w-xs px-4 font-normal ${
+              isDark ? "text-white/70" : "text-slate-500"
+            }`}>
               {customer.tagline}
             </p>
           )}
 
-          {/* 4 Quick Action Buttons */}
-          <div className="grid grid-cols-4 gap-2 w-full px-4 pt-5 pb-5 mt-4 border-t border-[#F0ECE3]">
+          {/* 4 Quick Action Buttons (Telpon, SMS, Email, Google Maps) */}
+          <div className={`grid grid-cols-4 gap-2 sm:gap-2.5 w-full px-4 pt-4 pb-4 mt-4 border-t ${
+            isDark ? "border-white/15" : "border-black/[0.06]"
+          }`}>
             {/* Telpon */}
             <a
               href={primaryPhone ? `tel:${primaryPhone}` : "#"}
               onClick={() => trackClick("call")}
               title="Panggil Telpon"
-              className="flex flex-col items-center justify-center py-2.5 px-1 rounded-2xl bg-[#F9F8F5] hover:bg-[#F2EFE8] border border-[#ECE7DE] text-slate-700 transition-all active:scale-95 group"
+              aria-label="Panggil Telpon"
+              id="btn-quick-call"
+              className={`flex items-center justify-center py-3 px-2 sm:px-3 rounded-2xl transition-all active:scale-95 group ${
+                isDark
+                  ? "bg-white/15 hover:bg-white/25 border border-white/20 text-white"
+                  : "bg-black/[0.04] hover:bg-black/[0.08] border border-black/[0.08] text-slate-800"
+              }`}
             >
-              <Phone className="w-4 h-4 text-slate-700 mb-1.5 group-hover:scale-110 transition-transform" />
-              <span className="text-[11px] font-medium text-slate-700">Telpon</span>
+              <Phone className="w-5 h-5 group-hover:scale-110 transition-transform" />
             </a>
 
             {/* SMS */}
@@ -348,10 +429,15 @@ export default function PublicCardView({ customer, footerText }: PublicCardViewP
               href={primaryPhone ? `sms:${primaryPhone}` : "#"}
               onClick={() => trackClick("sms")}
               title="Kirim SMS"
-              className="flex flex-col items-center justify-center py-2.5 px-1 rounded-2xl bg-[#F9F8F5] hover:bg-[#F2EFE8] border border-[#ECE7DE] text-slate-700 transition-all active:scale-95 group"
+              aria-label="Kirim SMS"
+              id="btn-quick-sms"
+              className={`flex items-center justify-center py-3 px-2 sm:px-3 rounded-2xl transition-all active:scale-95 group ${
+                isDark
+                  ? "bg-white/15 hover:bg-white/25 border border-white/20 text-white"
+                  : "bg-black/[0.04] hover:bg-black/[0.08] border border-black/[0.08] text-slate-800"
+              }`}
             >
-              <MessageSquare className="w-4 h-4 text-slate-700 mb-1.5 group-hover:scale-110 transition-transform" />
-              <span className="text-[11px] font-medium text-slate-700">SMS</span>
+              <MessageSquare className="w-5 h-5 group-hover:scale-110 transition-transform" />
             </a>
 
             {/* Email */}
@@ -359,20 +445,33 @@ export default function PublicCardView({ customer, footerText }: PublicCardViewP
               href={customer.email ? `mailto:${customer.email}` : "#"}
               onClick={() => trackClick("email")}
               title="Kirim Email"
-              className="flex flex-col items-center justify-center py-2.5 px-1 rounded-2xl bg-[#F9F8F5] hover:bg-[#F2EFE8] border border-[#ECE7DE] text-slate-700 transition-all active:scale-95 group"
+              aria-label="Kirim Email"
+              id="btn-quick-email"
+              className={`flex items-center justify-center py-3 px-2 sm:px-3 rounded-2xl transition-all active:scale-95 group ${
+                isDark
+                  ? "bg-white/15 hover:bg-white/25 border border-white/20 text-white"
+                  : "bg-black/[0.04] hover:bg-black/[0.08] border border-black/[0.08] text-slate-800"
+              }`}
             >
-              <Mail className="w-4 h-4 text-slate-700 mb-1.5 group-hover:scale-110 transition-transform" />
-              <span className="text-[11px] font-medium text-slate-700">Email</span>
+              <Mail className="w-5 h-5 group-hover:scale-110 transition-transform" />
             </a>
 
-            {/* Lokasi */}
+            {/* Google Maps */}
             <a
-              href="#section-lokasi"
-              title="Lihat Lokasi"
-              className="flex flex-col items-center justify-center py-2.5 px-1 rounded-2xl bg-[#F9F8F5] hover:bg-[#F2EFE8] border border-[#ECE7DE] text-slate-700 transition-all active:scale-95 group"
+              href={mapsLink}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={handleMapsClick}
+              title="Buka Google Maps"
+              aria-label="Buka Google Maps"
+              id="btn-quick-maps"
+              className={`flex items-center justify-center py-3 px-2 sm:px-3 rounded-2xl transition-all active:scale-95 group ${
+                isDark
+                  ? "bg-white/15 hover:bg-white/25 border border-white/20 text-white"
+                  : "bg-black/[0.04] hover:bg-black/[0.08] border border-black/[0.08] text-slate-800"
+              }`}
             >
-              <MapPin className="w-4 h-4 text-slate-700 mb-1.5 group-hover:scale-110 transition-transform" />
-              <span className="text-[11px] font-medium text-slate-700">Lokasi</span>
+              <MapPin className="w-5 h-5 group-hover:scale-110 transition-transform" />
             </a>
           </div>
         </section>
@@ -381,117 +480,126 @@ export default function PublicCardView({ customer, footerText }: PublicCardViewP
         {/* CARD 2: KONTAK */}
         {/* ============================================================ */}
         <section
-          aria-label="Detail Kontak Resmi"
-          className="w-full bg-white rounded-[26px] border border-[#ECE7DE] shadow-[0_2px_12px_rgba(0,0,0,0.025)] p-4 sm:p-5 space-y-3"
+          aria-label="Detail Kontak"
+          className={`w-full rounded-[26px] border ${
+            isDark ? "border-white/20 shadow-lg" : "border-black/[0.08] shadow-xs"
+          } p-4 sm:p-5 space-y-3`}
+          style={{ backgroundColor: cardBg }}
         >
-          {/* Header */}
+          {/* Header - Hapus teks 'Informasi Resmi' */}
           <div className="flex items-center justify-between pb-1">
-            <div className="flex items-center gap-2">
-              <User className="w-4 h-4 text-slate-700" />
-              <h2 className="text-xs font-bold text-slate-900 tracking-wider uppercase">
-                KONTAK
-              </h2>
-            </div>
-            <span className="text-[11px] font-medium text-[#9E8357]">
-              Informasi Resmi
-            </span>
+            <h2 className={`text-xs font-bold tracking-wider uppercase ${isDark ? "text-white" : "text-slate-900"}`}>
+              KONTAK
+            </h2>
           </div>
 
           <div className="space-y-2.5">
-            {/* Nama */}
-            <div className="p-3 rounded-2xl bg-[#F9F8F5] border border-[#ECE7DE] flex items-center justify-between">
-              <div className="flex items-center gap-3 min-w-0">
-                <div className="w-9 h-9 rounded-xl bg-white border border-[#EAE5DC] flex items-center justify-center text-slate-600 shrink-0">
-                  <User className="w-4 h-4" />
-                </div>
-                <div className="min-w-0">
-                  <span className="text-[10px] text-slate-400 font-medium block leading-tight">
-                    Nama
-                  </span>
-                  <span className="text-xs sm:text-sm font-bold text-slate-900 truncate block">
-                    {displayName}
-                  </span>
-                </div>
+            {/* Nama - Hapus simbol ikon kiri */}
+            <div className={`p-3.5 rounded-2xl border flex items-center justify-between ${
+              isDark ? "bg-white/15 border-white/20" : "bg-black/[0.04] border-black/[0.08]"
+            }`}>
+              <div className="min-w-0">
+                <span className={`text-[10px] font-medium block leading-tight ${
+                  isDark ? "text-white/70" : "text-slate-400"
+                }`}>
+                  Nama
+                </span>
+                <span className={`text-xs sm:text-sm font-bold truncate block mt-0.5 ${
+                  isDark ? "text-white" : "text-slate-900"
+                }`}>
+                  {displayName}
+                </span>
               </div>
             </div>
 
-            {/* Nomor Telpon */}
+            {/* Nomor Telpon - Hapus simbol ikon kiri */}
             {primaryPhone && (
-              <div className="p-3 rounded-2xl bg-[#F9F8F5] border border-[#ECE7DE] flex items-center justify-between">
-                <div className="flex items-center gap-3 min-w-0 pr-2">
-                  <div className="w-9 h-9 rounded-xl bg-white border border-[#EAE5DC] flex items-center justify-center text-slate-600 shrink-0">
-                    <Phone className="w-4 h-4" />
-                  </div>
-                  <div className="min-w-0">
-                    <span className="text-[10px] text-slate-400 font-medium block leading-tight">
-                      Nomor Telpon
-                    </span>
-                    <a
-                      href={`tel:${primaryPhone}`}
-                      onClick={() => trackClick("call")}
-                      className="text-xs sm:text-sm font-bold text-slate-900 hover:text-blue-600 transition-colors truncate block"
-                    >
-                      +{primaryPhone}
-                    </a>
-                  </div>
+              <div className={`p-3.5 rounded-2xl border flex items-center justify-between ${
+                isDark ? "bg-white/15 border-white/20" : "bg-black/[0.04] border-black/[0.08]"
+              }`}>
+                <div className="min-w-0 pr-2">
+                  <span className={`text-[10px] font-medium block leading-tight ${
+                    isDark ? "text-white/70" : "text-slate-400"
+                  }`}>
+                    Nomor Telpon
+                  </span>
+                  <a
+                    href={`tel:${primaryPhone}`}
+                    onClick={() => trackClick("call")}
+                    className={`text-xs sm:text-sm font-bold transition-colors truncate block mt-0.5 ${
+                      isDark ? "text-white hover:text-blue-200" : "text-slate-900 hover:text-blue-600"
+                    }`}
+                  >
+                    +{primaryPhone}
+                  </a>
                 </div>
                 <button
                   onClick={() => copyToClipboard(`+${primaryPhone}`, "Nomor telepon")}
                   aria-label="Salin nomor telepon"
                   title="Salin nomor telepon"
-                  className="p-2 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-white border border-transparent hover:border-[#EAE5DC] transition active:scale-95"
+                  className={`p-2 rounded-xl transition active:scale-95 ${
+                    isDark
+                      ? "text-white/80 hover:text-white hover:bg-white/20"
+                      : "text-slate-400 hover:text-slate-700 hover:bg-black/[0.05]"
+                  }`}
                 >
                   <Copy className="w-3.5 h-3.5" />
                 </button>
               </div>
             )}
 
-            {/* Email */}
+            {/* Email - Hapus simbol ikon kiri */}
             {customer.email && (
-              <div className="p-3 rounded-2xl bg-[#F9F8F5] border border-[#ECE7DE] flex items-center justify-between">
-                <div className="flex items-center gap-3 min-w-0 pr-2">
-                  <div className="w-9 h-9 rounded-xl bg-white border border-[#EAE5DC] flex items-center justify-center text-slate-600 shrink-0">
-                    <Mail className="w-4 h-4" />
-                  </div>
-                  <div className="min-w-0">
-                    <span className="text-[10px] text-slate-400 font-medium block leading-tight">
-                      Email
-                    </span>
-                    <a
-                      href={`mailto:${customer.email}`}
-                      onClick={() => trackClick("email")}
-                      className="text-xs sm:text-sm font-bold text-slate-900 hover:text-blue-600 transition-colors truncate block"
-                    >
-                      {customer.email}
-                    </a>
-                  </div>
+              <div className={`p-3.5 rounded-2xl border flex items-center justify-between ${
+                isDark ? "bg-white/15 border-white/20" : "bg-black/[0.04] border-black/[0.08]"
+              }`}>
+                <div className="min-w-0 pr-2">
+                  <span className={`text-[10px] font-medium block leading-tight ${
+                    isDark ? "text-white/70" : "text-slate-400"
+                  }`}>
+                    Email
+                  </span>
+                  <a
+                    href={`mailto:${customer.email}`}
+                    onClick={() => trackClick("email")}
+                    className={`text-xs sm:text-sm font-bold transition-colors truncate block mt-0.5 ${
+                      isDark ? "text-white hover:text-blue-200" : "text-slate-900 hover:text-blue-600"
+                    }`}
+                  >
+                    {customer.email}
+                  </a>
                 </div>
                 <button
                   onClick={() => copyToClipboard(customer.email || "", "Email")}
                   aria-label="Salin email"
                   title="Salin email"
-                  className="p-2 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-white border border-transparent hover:border-[#EAE5DC] transition active:scale-95"
+                  className={`p-2 rounded-xl transition active:scale-95 ${
+                    isDark
+                      ? "text-white/80 hover:text-white hover:bg-white/20"
+                      : "text-slate-400 hover:text-slate-700 hover:bg-black/[0.05]"
+                  }`}
                 >
                   <Copy className="w-3.5 h-3.5" />
                 </button>
               </div>
             )}
 
-            {/* Perusahaan */}
+            {/* Perusahaan - Hapus simbol ikon kiri */}
             {customer.businessName && (
-              <div className="p-3 rounded-2xl bg-[#F9F8F5] border border-[#ECE7DE] flex items-center justify-between">
-                <div className="flex items-center gap-3 min-w-0">
-                  <div className="w-9 h-9 rounded-xl bg-white border border-[#EAE5DC] flex items-center justify-center text-slate-600 shrink-0">
-                    <Building2 className="w-4 h-4" />
-                  </div>
-                  <div className="min-w-0">
-                    <span className="text-[10px] text-slate-400 font-medium block leading-tight">
-                      Perusahaan
-                    </span>
-                    <span className="text-xs sm:text-sm font-bold text-slate-900 truncate block">
-                      {customer.businessName}
-                    </span>
-                  </div>
+              <div className={`p-3.5 rounded-2xl border flex items-center justify-between ${
+                isDark ? "bg-white/15 border-white/20" : "bg-black/[0.04] border-black/[0.08]"
+              }`}>
+                <div className="min-w-0">
+                  <span className={`text-[10px] font-medium block leading-tight ${
+                    isDark ? "text-white/70" : "text-slate-400"
+                  }`}>
+                    Perusahaan
+                  </span>
+                  <span className={`text-xs sm:text-sm font-bold truncate block mt-0.5 ${
+                    isDark ? "text-white" : "text-slate-900"
+                  }`}>
+                    {customer.businessName}
+                  </span>
                 </div>
               </div>
             )}
@@ -502,11 +610,15 @@ export default function PublicCardView({ customer, footerText }: PublicCardViewP
             href={`/c/${customer.slug}/vcard`}
             onClick={handleVcardDownload}
             id="btn-save-contact"
-            className="w-full py-3.5 px-4 rounded-xl bg-[#0B1528] hover:bg-[#162238] active:scale-[0.98] text-white flex items-center justify-between shadow-md transition font-semibold text-xs sm:text-sm mt-1"
+            className={`w-full py-3.5 px-4 rounded-xl flex items-center justify-between shadow-md transition font-semibold text-xs sm:text-sm mt-1 active:scale-[0.98] ${
+              isDark
+                ? "bg-white text-slate-950 hover:bg-white/90"
+                : "bg-[#0B1528] text-white hover:bg-[#162238]"
+            }`}
           >
-            <Download className="w-4 h-4 text-white/90" />
+            <Download className={`w-4 h-4 ${isDark ? "text-slate-950" : "text-white/90"}`} />
             <span>Simpan Kontak ke HP (.vcf)</span>
-            <Download className="w-4 h-4 text-white/90" />
+            <Download className={`w-4 h-4 ${isDark ? "text-slate-950" : "text-white/90"}`} />
           </a>
         </section>
 
@@ -515,30 +627,39 @@ export default function PublicCardView({ customer, footerText }: PublicCardViewP
         {/* ============================================================ */}
         {(customer.address || customer.city) && (
           <section
-            id="section-lokasi"
+            id="card-lokasi"
             aria-label="Lokasi Bisnis"
-            className="w-full bg-white rounded-[26px] border border-[#ECE7DE] shadow-[0_2px_12px_rgba(0,0,0,0.025)] p-4 sm:p-5 space-y-3"
+            className={`w-full rounded-[26px] border ${
+              isDark ? "border-black/20" : "border-[#ECE7DE]"
+            } shadow-[0_2px_12px_rgba(0,0,0,0.025)] p-4 sm:p-5 space-y-3`}
+            style={{ backgroundColor: cardBg }}
           >
             {/* Header */}
             <div className="flex items-center justify-between pb-1">
               <div className="flex items-center gap-2">
-                <MapPin className="w-4 h-4 text-slate-700" />
-                <h2 className="text-xs font-bold text-slate-900 tracking-wider uppercase">
+                <MapPin className={`w-4 h-4 ${isDark ? "text-white/90" : "text-slate-700"}`} />
+                <h2 className={`text-xs font-bold tracking-wider uppercase ${isDark ? "text-white" : "text-slate-900"}`}>
                   LOKASI
                 </h2>
               </div>
               {customer.city && (
-                <span className="text-[11px] font-medium text-[#9E8357] bg-[#FDF6ED] border border-[#F2E2CE] px-2.5 py-0.5 rounded-full">
+                <span className={`text-[11px] font-medium px-2.5 py-0.5 rounded-full ${
+                  isDark
+                    ? "text-amber-200 bg-white/20 border border-white/30"
+                    : "text-[#9E8357] bg-[#FDF6ED] border border-[#F2E2CE]"
+                }`}>
                   {customer.city}
                 </span>
               )}
             </div>
 
             {/* Address Box */}
-            <div className="p-3.5 rounded-2xl bg-[#F9F8F5] border border-[#ECE7DE] text-xs text-slate-700 leading-relaxed">
+            <div className={`p-3.5 rounded-2xl border text-xs leading-relaxed ${
+              isDark ? "bg-white/15 border-white/20 text-white/90" : "bg-black/[0.04] border-black/[0.08] text-slate-700"
+            }`}>
               <p className="font-normal">{customer.address}</p>
               {customer.city && customer.address !== customer.city && (
-                <p className="text-[11px] text-slate-400 font-medium mt-1">
+                <p className={`text-[11px] font-medium mt-1 ${isDark ? "text-white/70" : "text-slate-400"}`}>
                   {customer.city}
                 </p>
               )}
@@ -549,19 +670,25 @@ export default function PublicCardView({ customer, footerText }: PublicCardViewP
               href={mapsLink}
               target="_blank"
               rel="noopener noreferrer"
-              onClick={() => trackClick("maps")}
+              onClick={handleMapsClick}
               id="btn-show-on-map"
-              className="w-full p-3 rounded-2xl bg-[#F9F8F5] hover:bg-[#F2EFE8] border border-[#ECE7DE] flex items-center justify-between text-slate-800 transition-all active:scale-[0.98]"
+              className={`w-full p-3 rounded-2xl border flex items-center justify-between transition-all active:scale-[0.98] ${
+                isDark
+                  ? "bg-white/15 hover:bg-white/25 border-white/20 text-white"
+                  : "bg-black/[0.04] hover:bg-black/[0.08] border-black/[0.08] text-slate-800"
+              }`}
             >
               <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-xl bg-[#EFE8DD] text-[#8C6D3F] flex items-center justify-center shrink-0">
+                <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${
+                  isDark ? "bg-white/25 text-white" : "bg-black/[0.06] text-slate-800"
+                }`}>
                   <MapPin className="w-4 h-4" />
                 </div>
-                <span className="text-xs font-semibold text-slate-800">
-                  Show on Map (Buka di Peta)
+                <span className={`text-xs font-semibold ${isDark ? "text-white" : "text-slate-800"}`}>
+                  Buka di Google Maps
                 </span>
               </div>
-              <ExternalLink className="w-3.5 h-3.5 text-slate-400" />
+              <ExternalLink className={`w-3.5 h-3.5 ${isDark ? "text-white/70" : "text-slate-400"}`} />
             </a>
           </section>
         )}
@@ -572,12 +699,15 @@ export default function PublicCardView({ customer, footerText }: PublicCardViewP
         {customer.website && (
           <section
             aria-label="Website Resmi"
-            className="w-full bg-white rounded-[26px] border border-[#ECE7DE] shadow-[0_2px_12px_rgba(0,0,0,0.025)] p-4 sm:p-5 space-y-3"
+            className={`w-full rounded-[26px] border ${
+              isDark ? "border-white/20 shadow-lg" : "border-black/[0.08] shadow-xs"
+            } p-4 sm:p-5 space-y-3`}
+            style={{ backgroundColor: cardBg }}
           >
             {/* Header */}
             <div className="flex items-center gap-2 pb-1">
-              <Globe className="w-4 h-4 text-slate-700" />
-              <h2 className="text-xs font-bold text-slate-900 tracking-wider uppercase">
+              <Globe className={`w-4 h-4 ${isDark ? "text-white/90" : "text-slate-700"}`} />
+              <h2 className={`text-xs font-bold tracking-wider uppercase ${isDark ? "text-white" : "text-slate-900"}`}>
                 WEBSITE
               </h2>
             </div>
@@ -589,22 +719,28 @@ export default function PublicCardView({ customer, footerText }: PublicCardViewP
               rel="noopener noreferrer"
               onClick={() => trackClick("website")}
               id="btn-website"
-              className="w-full p-3 rounded-2xl bg-[#F9F8F5] hover:bg-[#F2EFE8] border border-[#ECE7DE] flex items-center justify-between transition-all active:scale-[0.98]"
+              className={`w-full p-3 rounded-2xl border flex items-center justify-between transition-all active:scale-[0.98] ${
+                isDark
+                  ? "bg-white/15 hover:bg-white/25 border-white/20 text-white"
+                  : "bg-black/[0.04] hover:bg-black/[0.08] border-black/[0.08] text-slate-800"
+              }`}
             >
               <div className="flex items-center gap-3 min-w-0 pr-2">
-                <div className="w-9 h-9 rounded-xl bg-white border border-[#EAE5DC] flex items-center justify-center text-slate-600 shrink-0">
+                <div className={`w-9 h-9 rounded-xl border flex items-center justify-center shrink-0 ${
+                  isDark ? "bg-white/20 border-white/30 text-white" : "bg-black/[0.05] border-black/10 text-slate-800"
+                }`}>
                   <Globe className="w-4 h-4" />
                 </div>
                 <div className="min-w-0">
-                  <span className="text-[10px] text-slate-400 font-medium block leading-tight">
+                  <span className={`text-[10px] font-medium block leading-tight ${isDark ? "text-white/70" : "text-slate-400"}`}>
                     Situs Resmi
                   </span>
-                  <span className="text-xs sm:text-sm font-bold text-slate-900 truncate block">
+                  <span className={`text-xs sm:text-sm font-bold truncate block ${isDark ? "text-white" : "text-slate-900"}`}>
                     {displayWebsite}
                   </span>
                 </div>
               </div>
-              <ExternalLink className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+              <ExternalLink className={`w-3.5 h-3.5 shrink-0 ${isDark ? "text-white/70" : "text-slate-400"}`} />
             </a>
           </section>
         )}
@@ -614,18 +750,21 @@ export default function PublicCardView({ customer, footerText }: PublicCardViewP
         {/* ============================================================ */}
         <section
           aria-label="Media Sosial dan Chat"
-          className="w-full bg-white rounded-[26px] border border-[#ECE7DE] shadow-[0_2px_12px_rgba(0,0,0,0.025)] p-4 sm:p-5 space-y-2.5"
+          className={`w-full rounded-[26px] border ${
+            isDark ? "border-white/20 shadow-lg" : "border-black/[0.08] shadow-xs"
+          } p-4 sm:p-5 space-y-2.5`}
+          style={{ backgroundColor: cardBg }}
         >
           {/* Header */}
           <div className="flex items-center gap-2 pb-1">
-            <Share2 className="w-4 h-4 text-slate-700" />
-            <h2 className="text-xs font-bold text-slate-900 tracking-wider uppercase">
+            <Share2 className={`w-4 h-4 ${isDark ? "text-white/90" : "text-slate-700"}`} />
+            <h2 className={`text-xs font-bold tracking-wider uppercase ${isDark ? "text-white" : "text-slate-900"}`}>
               MEDIA SOSIAL & CHAT
             </h2>
           </div>
 
           <div className="space-y-2">
-            {/* WhatsApp */}
+            {/* WhatsApp - 1 warna logo, lingkaran bulat (rounded-full), tanpa subtitle */}
             {customer.whatsapp && (
               <a
                 href={waUrl}
@@ -633,26 +772,27 @@ export default function PublicCardView({ customer, footerText }: PublicCardViewP
                 rel="noopener noreferrer"
                 onClick={() => trackClick("whatsapp")}
                 id="btn-whatsapp-chat"
-                className="w-full p-3 rounded-2xl bg-[#F9F8F5] hover:bg-[#F2EFE8] border border-[#ECE7DE] flex items-center justify-between transition-all active:scale-[0.98]"
+                className={`w-full p-3 rounded-2xl border flex items-center justify-between transition-all active:scale-[0.98] ${
+                  isDark
+                    ? "bg-white/15 hover:bg-white/25 border-white/20 text-white"
+                    : "bg-black/[0.04] hover:bg-black/[0.08] border-black/[0.08] text-slate-800"
+                }`}
               >
                 <div className="flex items-center gap-3 min-w-0 pr-2">
-                  <div className="w-9 h-9 rounded-xl bg-white border border-[#EAE5DC] flex items-center justify-center text-[#25D366] shrink-0">
-                    <WhatsAppIcon size={18} />
+                  <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 transition-colors ${
+                    isDark ? "bg-white/15 text-white" : "bg-black/[0.05] text-slate-900"
+                  }`}>
+                    <WhatsAppIcon size={19} />
                   </div>
-                  <div className="min-w-0">
-                    <span className="text-xs sm:text-sm font-bold text-slate-900 block">
-                      WhatsApp
-                    </span>
-                    <span className="text-[11px] text-slate-500 block truncate">
-                      +{customer.whatsapp}
-                    </span>
-                  </div>
+                  <span className={`text-xs sm:text-sm font-bold truncate block ${isDark ? "text-white" : "text-slate-900"}`}>
+                    WhatsApp
+                  </span>
                 </div>
-                <ExternalLink className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                <ExternalLink className={`w-3.5 h-3.5 shrink-0 ${isDark ? "text-white/70" : "text-slate-400"}`} />
               </a>
             )}
 
-            {/* Instagram */}
+            {/* Instagram - 1 warna logo, lingkaran bulat (rounded-full), tanpa subtitle */}
             {customer.instagramUsername && (
               <a
                 href={`https://instagram.com/${cleanIg}`}
@@ -660,26 +800,27 @@ export default function PublicCardView({ customer, footerText }: PublicCardViewP
                 rel="noopener noreferrer"
                 onClick={() => trackClick("instagram")}
                 id="btn-instagram"
-                className="w-full p-3 rounded-2xl bg-[#F9F8F5] hover:bg-[#F2EFE8] border border-[#ECE7DE] flex items-center justify-between transition-all active:scale-[0.98]"
+                className={`w-full p-3 rounded-2xl border flex items-center justify-between transition-all active:scale-[0.98] ${
+                  isDark
+                    ? "bg-white/15 hover:bg-white/25 border-white/20 text-white"
+                    : "bg-black/[0.04] hover:bg-black/[0.08] border-black/[0.08] text-slate-800"
+                }`}
               >
                 <div className="flex items-center gap-3 min-w-0 pr-2">
-                  <div className="w-9 h-9 rounded-xl bg-white border border-[#EAE5DC] flex items-center justify-center text-[#E1306C] shrink-0">
-                    <InstagramIcon size={18} />
+                  <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 transition-colors ${
+                    isDark ? "bg-white/15 text-white" : "bg-black/[0.05] text-slate-900"
+                  }`}>
+                    <InstagramIcon size={19} />
                   </div>
-                  <div className="min-w-0">
-                    <span className="text-xs sm:text-sm font-bold text-slate-900 block">
-                      Instagram
-                    </span>
-                    <span className="text-[11px] text-slate-500 block truncate">
-                      @{cleanIg}
-                    </span>
-                  </div>
+                  <span className={`text-xs sm:text-sm font-bold truncate block ${isDark ? "text-white" : "text-slate-900"}`}>
+                    Instagram
+                  </span>
                 </div>
-                <ExternalLink className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                <ExternalLink className={`w-3.5 h-3.5 shrink-0 ${isDark ? "text-white/70" : "text-slate-400"}`} />
               </a>
             )}
 
-            {/* Facebook */}
+            {/* Facebook - 1 warna logo, lingkaran bulat (rounded-full), tanpa subtitle */}
             {customer.facebookUrl && (
               <a
                 href={
@@ -691,26 +832,27 @@ export default function PublicCardView({ customer, footerText }: PublicCardViewP
                 rel="noopener noreferrer"
                 onClick={() => trackClick("facebook")}
                 id="btn-facebook"
-                className="w-full p-3 rounded-2xl bg-[#F9F8F5] hover:bg-[#F2EFE8] border border-[#ECE7DE] flex items-center justify-between transition-all active:scale-[0.98]"
+                className={`w-full p-3 rounded-2xl border flex items-center justify-between transition-all active:scale-[0.98] ${
+                  isDark
+                    ? "bg-white/15 hover:bg-white/25 border-white/20 text-white"
+                    : "bg-black/[0.04] hover:bg-black/[0.08] border-black/[0.08] text-slate-800"
+                }`}
               >
                 <div className="flex items-center gap-3 min-w-0 pr-2">
-                  <div className="w-9 h-9 rounded-xl bg-white border border-[#EAE5DC] flex items-center justify-center text-[#1877F2] shrink-0">
-                    <FacebookIcon size={18} />
+                  <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 transition-colors ${
+                    isDark ? "bg-white/15 text-white" : "bg-black/[0.05] text-slate-900"
+                  }`}>
+                    <FacebookIcon size={19} />
                   </div>
-                  <div className="min-w-0">
-                    <span className="text-xs sm:text-sm font-bold text-slate-900 block">
-                      Facebook
-                    </span>
-                    <span className="text-[11px] text-slate-500 block truncate">
-                      Halaman / Profil
-                    </span>
-                  </div>
+                  <span className={`text-xs sm:text-sm font-bold truncate block ${isDark ? "text-white" : "text-slate-900"}`}>
+                    Facebook
+                  </span>
                 </div>
-                <ExternalLink className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                <ExternalLink className={`w-3.5 h-3.5 shrink-0 ${isDark ? "text-white/70" : "text-slate-400"}`} />
               </a>
             )}
 
-            {/* TikTok */}
+            {/* TikTok - 1 warna logo, lingkaran bulat (rounded-full), tanpa subtitle */}
             {customer.tiktokUsername && (
               <a
                 href={`https://tiktok.com/@${cleanTiktok}`}
@@ -718,26 +860,27 @@ export default function PublicCardView({ customer, footerText }: PublicCardViewP
                 rel="noopener noreferrer"
                 onClick={() => trackClick("tiktok")}
                 id="btn-tiktok"
-                className="w-full p-3 rounded-2xl bg-[#F9F8F5] hover:bg-[#F2EFE8] border border-[#ECE7DE] flex items-center justify-between transition-all active:scale-[0.98]"
+                className={`w-full p-3 rounded-2xl border flex items-center justify-between transition-all active:scale-[0.98] ${
+                  isDark
+                    ? "bg-white/15 hover:bg-white/25 border-white/20 text-white"
+                    : "bg-black/[0.04] hover:bg-black/[0.08] border-black/[0.08] text-slate-800"
+                }`}
               >
                 <div className="flex items-center gap-3 min-w-0 pr-2">
-                  <div className="w-9 h-9 rounded-xl bg-white border border-[#EAE5DC] flex items-center justify-center text-slate-900 shrink-0">
-                    <TikTokIcon size={18} />
+                  <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 transition-colors ${
+                    isDark ? "bg-white/15 text-white" : "bg-black/[0.05] text-slate-900"
+                  }`}>
+                    <TikTokIcon size={19} />
                   </div>
-                  <div className="min-w-0">
-                    <span className="text-xs sm:text-sm font-bold text-slate-900 block">
-                      TikTok
-                    </span>
-                    <span className="text-[11px] text-slate-500 block truncate">
-                      @{cleanTiktok}
-                    </span>
-                  </div>
+                  <span className={`text-xs sm:text-sm font-bold truncate block ${isDark ? "text-white" : "text-slate-900"}`}>
+                    TikTok
+                  </span>
                 </div>
-                <ExternalLink className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                <ExternalLink className={`w-3.5 h-3.5 shrink-0 ${isDark ? "text-white/70" : "text-slate-400"}`} />
               </a>
             )}
 
-            {/* LinkedIn */}
+            {/* LinkedIn - 1 warna logo, lingkaran bulat (rounded-full), tanpa subtitle */}
             {customer.linkedinUrl && (
               <a
                 href={
@@ -749,34 +892,37 @@ export default function PublicCardView({ customer, footerText }: PublicCardViewP
                 rel="noopener noreferrer"
                 onClick={() => trackClick("linkedin")}
                 id="btn-linkedin"
-                className="w-full p-3 rounded-2xl bg-[#F9F8F5] hover:bg-[#F2EFE8] border border-[#ECE7DE] flex items-center justify-between transition-all active:scale-[0.98]"
+                className={`w-full p-3 rounded-2xl border flex items-center justify-between transition-all active:scale-[0.98] ${
+                  isDark
+                    ? "bg-white/15 hover:bg-white/25 border-white/20 text-white"
+                    : "bg-black/[0.04] hover:bg-black/[0.08] border-black/[0.08] text-slate-800"
+                }`}
               >
                 <div className="flex items-center gap-3 min-w-0 pr-2">
-                  <div className="w-9 h-9 rounded-xl bg-white border border-[#EAE5DC] flex items-center justify-center text-[#0A66C2] shrink-0">
-                    <LinkedInIcon size={18} />
+                  <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 transition-colors ${
+                    isDark ? "bg-white/15 text-white" : "bg-black/[0.05] text-slate-900"
+                  }`}>
+                    <LinkedInIcon size={19} />
                   </div>
-                  <div className="min-w-0">
-                    <span className="text-xs sm:text-sm font-bold text-slate-900 block">
-                      LinkedIn
-                    </span>
-                    <span className="text-[11px] text-slate-500 block truncate">
-                      Profil Profesional
-                    </span>
-                  </div>
+                  <span className={`text-xs sm:text-sm font-bold truncate block ${isDark ? "text-white" : "text-slate-900"}`}>
+                    LinkedIn
+                  </span>
                 </div>
-                <ExternalLink className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                <ExternalLink className={`w-3.5 h-3.5 shrink-0 ${isDark ? "text-white/70" : "text-slate-400"}`} />
               </a>
             )}
           </div>
         </section>
 
-        {/* Footer */}
+        {/* Footer - Hapus duplikasi teks */}
         <footer className="w-full flex items-center justify-center gap-3 pt-4 pb-8">
-          <div className="h-[1px] w-8 bg-stone-300" />
-          <span className="text-[11px] text-stone-400 font-normal">
-            Dibuat oleh {footerText || "TautSmart"}
+          <div className={`h-[1px] w-8 ${isDark ? "bg-white/30" : "bg-stone-300"}`} />
+          <span className={`text-[11px] font-normal ${isDark ? "text-white/60" : "text-stone-400"}`}>
+            {footerText?.startsWith("Dibuat oleh")
+              ? footerText
+              : `Dibuat oleh ${footerText || "TautSmart"}`}
           </span>
-          <div className="h-[1px] w-8 bg-stone-300" />
+          <div className={`h-[1px] w-8 ${isDark ? "bg-white/30" : "bg-stone-300"}`} />
         </footer>
       </main>
 
